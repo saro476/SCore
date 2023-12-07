@@ -296,6 +296,9 @@ public final class SCore extends JavaPlugin implements SPlugin {
 
         this.loadDependency();
 
+        this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+        
+
         GeneralConfig.getInstance();
 
         TM.getInstance().load();
@@ -505,6 +508,8 @@ public final class SCore extends JavaPlugin implements SPlugin {
             VariablesManager.getInstance().updateAllLoadedMySQL(VariablesManager.MODE.IMPORT);
             Utils.sendConsoleMsg(SCore.NAME_COLOR + " &7Save &6" + VariablesManager.getInstance().getLoadedObjects().size() + " &7variables from your MySQL Database !");
         }
+
+        this.getServer().getMessenger().unregisterOutgoingPluginChannel(this);
 
         Utils.sendConsoleMsg(SCore.NAME_COLOR + " &7Save UsagePerDay....");
         UsagePerDayManager.getInstance().save();

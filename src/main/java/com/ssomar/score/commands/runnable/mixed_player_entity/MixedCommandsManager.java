@@ -30,6 +30,7 @@ public class MixedCommandsManager extends CommandManager<SCommand> {
         commands.add(new AnimationTeleportEnder());
         commands.add(new AnimationTotem());
         commands.add(new BackDash());
+        commands.add(new BungeeSend());
         commands.add(new Burn());
         commands.add(new ConsoleMessage());
         commands.add(new CopyEffects());
