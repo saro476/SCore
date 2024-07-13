@@ -20,13 +20,9 @@ public class ItemConditionRequest extends ConditionRequest {
     private ItemStack itemStack;
     private Optional<Player> playerOpt;
 
-    private StringPlaceholder sp;
-
     public ItemConditionRequest(@NotNull ItemStack itemStack, @NotNull Optional<Player> playerOpt, @Nullable StringPlaceholder sp, @Nullable Event event) {
-        super(event);
+        super(event, Optional.ofNullable(sp).orElse(new StringPlaceholder()));
         this.itemStack = itemStack;
         this.playerOpt = playerOpt;
-        if (sp == null) this.sp = new StringPlaceholder();
-        else this.sp = sp;
     }
 }

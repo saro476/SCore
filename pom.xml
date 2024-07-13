@@ -54,13 +54,14 @@
                     <include>*.yml</include>
                 </includes> -->
             </resource>
+
             <resource>
-                <targetPath>com/ssomar/score/configs/projectiles_not_editable</targetPath>
+                <targetPath>com/ssomar/score/configs/hardnesses</targetPath>
                 <filtering>true</filtering>
-                <directory>${basedir}/src/main/resources/projectiles_not_editable/</directory>
+                <directory>src/main/resources/hardnesses/</directory>
                 <!-- <includes>
-                   <include>*.yml</include>
-               </includes> -->
+                    <include>*.yml</include>
+                </includes> -->
             </resource>
             <resource>
                 <targetPath>com/ssomar/score/configs/variables</targetPath>
@@ -77,8 +78,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>8</source>
+                    <target>8</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
@@ -97,6 +98,12 @@
                             </excludes>
                         </filter>
                     </filters>
+                    <relocations>
+                        <relocation>
+                            <pattern>com.jeff_media.customblockdata</pattern>
+                            <shadedPattern>com.ssomar.score.customblockdata</shadedPattern>
+                        </relocation>
+                    </relocations>
                 </configuration>
                 <executions>
                     <execution>
@@ -108,6 +115,30 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!--<plugin>
+                <groupId>com.github.wvengen</groupId>
+                <artifactId>proguard-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>proguard</goal></goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includeDependency>true</includeDependency>
+                    <proguardVersion>4.5</proguardVersion>
+                    <proguardInclude>${basedir}/Obfu_MF.conf</proguardInclude>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.sf.proguard</groupId>
+                        <artifactId>proguard-base</artifactId>
+                        <version>4.5</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
+            </plugin>-->
         </plugins>
     </build>
 
@@ -133,6 +164,7 @@
                                 </filter>
                             </filters>
                         </configuration>
+
                         <executions>
                             <execution>
                                 <id>build_server</id>
@@ -140,14 +172,11 @@
                                 <goals>
                                     <goal>shade</goal>
                                 </goals>
-                                <!--_AUTO_UPDATE_START_COMMENT_-->
                                 <configuration>
                                     <createDependencyReducedPom>false</createDependencyReducedPom>
                                     <outputFile>C:\serveur local 1.19\plugins\SCore.jar</outputFile>
                                 </configuration>
-                                <!--_AUTO_UPDATE_END_COMMENT_-->
                             </execution>
-                            <!--_AUTO_UPDATE_START_COMMENT_-->
                             <execution>
                                 <id>build_1v8</id>
                                 <phase>package</phase>
@@ -157,6 +186,17 @@
                                 <configuration>
                                     <createDependencyReducedPom>false</createDependencyReducedPom>
                                     <outputFile>C:\serveur local 1.8\plugins\SCore.jar</outputFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>build_1v14</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                                    <outputFile>C:\serveur local 1.14\plugins\SCore.jar</outputFile>
                                 </configuration>
                             </execution>
                             <execution>
@@ -215,6 +255,28 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <id>build_dep_eb_evo</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                                    <outputFile>C:\Users\octav\Documents\GitHub\ExecutableBlocksEvo\src\main\resources\SCore.jar</outputFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>build_dep_test</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                                    <outputFile>C:\Users\octav\Documents\GitHub\TestPlugin\src\main\resources\SCore.jar</outputFile>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>build_dep_ei</id>
                                 <phase>package</phase>
                                 <goals>
@@ -248,6 +310,19 @@
                                     <createDependencyReducedPom>false</createDependencyReducedPom>
                                     <outputFile>
                                         C:\Users\octav\Documents\GitHub\CustomPiglinsTrades\src\main\resources\SCore.jar
+                                    </outputFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>build_dep_ss</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                                    <outputFile>
+                                        C:\Users\octav\Documents\GitHub\ScreenShop\src\main\resources\SCore.jar
                                     </outputFile>
                                 </configuration>
                             </execution>
@@ -300,11 +375,61 @@
                                 <configuration>
                                     <createDependencyReducedPom>false</createDependencyReducedPom>
                                     <outputFile>
-                                        C:\Users\octav\Documents\GitHub\MiniLevers\src\main\resources\SCore.jar
+                                        C:\Users\octav\Documents\GitHub\ExecutableLevers\src\main\resources\SCore.jar
                                     </outputFile>
                                 </configuration>
                             </execution>
-                            <!--_AUTO_UPDATE_END_COMMENT_-->
+
+                            <execution>
+                                <id>build_dep_myfurniture</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                                    <outputFile>
+                                        C:\Users\octav\Documents\GitHub\MyFurniture\src\main\resources\SCore.jar
+                                    </outputFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>Ssomar_only_necessary</id>
+            <build>
+                <finalName>${project.artifactId}-${project.version}</finalName>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/maven/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <id>build_server</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                                    <outputFile>C:\serveur local 1.19\plugins\SCore.jar</outputFile>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                 </plugins>
@@ -376,9 +501,44 @@
             <name>Lumine Releases</name>
             <url>https://mvn.lumine.io/repository/maven-public/</url>
         </repository>
+
     </repositories>
 
     <dependencies>
+
+        <!-- <dependency>
+            <groupId>com.github.wvengen</groupId>
+            <artifactId>proguard-maven-plugin</artifactId>
+            <version>2.6.1</version>
+            <scope>provided</scope>
+        </dependency>-->
+
+        <dependency>
+            <!-- jsoup HTML parser library @ https://jsoup.org/ -->
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.15.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20231013</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.massivecraft</groupId>
+            <artifactId>Factions</artifactId>
+            <version>1.6.9.5-U0.6.33</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/SaberFactions.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>com.thoughtworks.paranamer</groupId>
+            <artifactId>paranamer</artifactId>
+            <version>2.8</version>
+        </dependency>
 
         <dependency>
             <groupId>xyz.xenondevs</groupId>
@@ -390,7 +550,7 @@
         <dependency>
             <groupId>net.kyori</groupId>
             <artifactId>adventure-text-minimessage</artifactId>
-            <version>4.14.0</version>
+            <version>4.17.0</version>
             <scope>compile</scope>
         </dependency>
 
@@ -409,26 +569,26 @@
             <systemPath>${project.basedir}/src/main/resources/MMOCore.jar</systemPath>
         </dependency>
 
+        <!-- DEPENDENCIES
+        <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+            <version>0.10</version>
+        </dependency>-->
 
-        <!-- <dependency>
+        <dependency>
              <groupId>org.spigotmc</groupId>
              <artifactId>spigot-api</artifactId>
-             <version>1.19.2-R0.1-SNAPSHOT</version>
+             <version>1.21-R0.1-SNAPSHOT</version>
              <scope>provided</scope>
-         </dependency>-->
+         </dependency>
 
         <dependency>
             <groupId>dev.folia</groupId>
             <artifactId>folia-api</artifactId>
-            <version>1.20.1-R0.1-SNAPSHOT</version>
+            <version>1.20.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- <dependency>
-           <groupId>org.yaml</groupId>
-           <artifactId>snakeyaml</artifactId>
-           <version>1.21</version>
-       </dependency>-->
 
         <dependency>
             <groupId>mysql</groupId>
@@ -464,12 +624,14 @@
             <version>1.5.21</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>
             <version>2.10.9</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>com.sk89q.worldguard</groupId>
             <artifactId>worldguard-bukkit</artifactId>
@@ -482,18 +644,36 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>com.github.MilkBowl</groupId>
             <artifactId>VaultAPI</artifactId>
             <version>1.7</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>com.ssomar</groupId>
             <artifactId>ExecutableItems</artifactId>
             <version>v5.3.8</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/src/main/resources/ExecutableItems.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>net.goldtreeservers</groupId>
+            <artifactId>WorldGuardExtraFlags</artifactId>
+            <version>4.2.3</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/WorldGuardExtraFlags.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>io.lumine</groupId>
+            <artifactId>MythicLib</artifactId>
+            <version>1.8.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/MythicLib-1.6.1.jar</systemPath>
         </dependency>
 
         <dependency>
@@ -507,7 +687,7 @@
         <dependency>
             <groupId>com.ssomar</groupId>
             <artifactId>ExecutableBlocks</artifactId>
-            <version>3.3.8</version>
+            <version>4.23.11.26</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/src/main/resources/ExecutableBlocks.jar</systemPath>
         </dependency>
@@ -521,18 +701,11 @@
         </dependency>
 
         <dependency>
-            <!-- jsoup HTML parser library @ https://jsoup.org/ -->
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.13.1</version>
-        </dependency>
-
-        <dependency>
             <groupId>com.iridium</groupId>
             <artifactId>IridiumSkyblock</artifactId>
-            <version>3.2.9</version>
+            <version>4.0.10</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/src/main/resources/IridiumSkyblock-3.2.9.jar</systemPath>
+            <systemPath>${project.basedir}/src/main/resources/IridiumSkyblock-4.0.10-BETA-2.jar</systemPath>
         </dependency>
 
         <dependency>
@@ -541,6 +714,14 @@
             <version>1.19-v2</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/src/main/resources/MyWorlds.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.Zrips</groupId>
+            <artifactId>Jobs</artifactId>
+            <version>5.2.2.3</version> <!-- Change the LATEST to the current version of jobs -->
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/Jobs5.2.2.3.jar</systemPath>
         </dependency>
 
         <dependency>
@@ -579,6 +760,7 @@
             <version>6.37.0</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>com.github.TechFortress</groupId>
             <artifactId>GriefPrevention</artifactId>
@@ -632,20 +814,14 @@
         <dependency>
             <groupId>com.github.Ssomar-Developement</groupId>
             <artifactId>SEvents</artifactId>
-            <version>main-9b1808d982-1</version>
+            <version>main-41a25eebab-1</version>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.20</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>31.0.1-jre</version>
+            <version>1.18.30</version>
             <scope>provided</scope>
         </dependency>
 
@@ -677,6 +853,14 @@
             <version>6.2.2</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/src/main/resources/Terra.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>com.ssomar.myfurniture</groupId>
+            <artifactId>MyFurniture</artifactId>
+            <version>6.2.2</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/MyFurniture.jar</systemPath>
         </dependency>
 
         <dependency>
@@ -723,6 +907,14 @@
             <artifactId>AureliumSkills</artifactId>
             <version>Beta1.3.5</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.Archy-X</groupId>
+            <artifactId>AuraSkills</artifactId>
+            <version>2.0.9</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/AuraSkills-2.0.9.jar</systemPath>
         </dependency>
 
         <dependency>
@@ -778,19 +970,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.12.0</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.thoughtworks.paranamer</groupId>
-            <artifactId>paranamer</artifactId>
-            <version>2.8</version>
-        </dependency>
-
-        <dependency>
             <groupId>me.clip.placeholderapi</groupId>
             <artifactId>PlaceholderAPI</artifactId>
             <version>2.11.2</version>
@@ -813,10 +992,5 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/src/main/resources/TAB.jar</systemPath>
         </dependency>
-        <dependency>
-        <groupId>net.objecthunter</groupId>
-        <artifactId>exp4j</artifactId>
-        <version>0.4.8</version>
-    </dependency>
     </dependencies>
 </project>

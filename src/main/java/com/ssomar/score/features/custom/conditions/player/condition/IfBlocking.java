@@ -1,20 +1,20 @@
 package com.ssomar.score.features.custom.conditions.player.condition;
 
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.custom.conditions.player.PlayerConditionFeature;
 import com.ssomar.score.features.custom.conditions.player.PlayerConditionRequest;
 import com.ssomar.score.features.types.BooleanFeature;
-import org.bukkit.Material;
 
 public class IfBlocking extends PlayerConditionFeature<BooleanFeature, IfBlocking> {
 
     public IfBlocking(FeatureParentInterface parent) {
-        super(parent, "ifBlocking", "If blocking", new String[]{}, Material.ANVIL, false);
+        super(parent, FeatureSettingsSCore.ifBlocking);
     }
 
     @Override
     public boolean verifCondition(PlayerConditionRequest request) {
-        if (hasCondition() && !request.getPlayer().isBlocking()) {
+        if (getCondition().getValue(request.getSp()) && !request.getPlayer().isBlocking()) {
             runInvalidCondition(request);
             return false;
         }
@@ -28,12 +28,12 @@ public class IfBlocking extends PlayerConditionFeature<BooleanFeature, IfBlockin
 
     @Override
     public void subReset() {
-        setCondition(new BooleanFeature(getParent(), "ifBlocking", false, "If blocking", new String[]{}, Material.LEVER, false, true));
+        setCondition(new BooleanFeature(getParent(), false, FeatureSettingsSCore.ifBlocking, true));
     }
 
     @Override
     public boolean hasCondition() {
-        return getCondition().getValue();
+        return getCondition().isConfigured();
     }
 
     @Override

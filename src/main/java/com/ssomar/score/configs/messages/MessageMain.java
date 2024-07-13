@@ -80,17 +80,21 @@ public class MessageMain {
 
     public String write(Plugin plugin, File pdFile, FileConfiguration config, String what) {
 
-        String insert = "Can't load the string (" + what + ") for the plugin > " + plugin.getName() + " in language: " + GeneralConfig.getInstance().getLocale() + ", contact the developper";
+        String insert = "Can't load the string (" + what + ") for the plugin > " + plugin.getName() + " in language: " + GeneralConfig.getInstance().getLocale() + ", contact the developer";
         try {
 
             InputStream flux = plugin.getClass().getResourceAsStream("/com/ssomar/" + plugin.getName().toLowerCase() + "/configs/locale/Locale_" + GeneralConfig.getInstance().getLocale() + ".yml");
+            if(flux == null) {
+                Utils.sendConsoleMsg("&c"+SCore.plugin.getNameWithBrackets() + " &cERROR LOAD MESSAGE &6"+ what + " &cfor the plugin > &6" + plugin.getName() + " &cin language: &6" + GeneralConfig.getInstance().getLocale()+" &c(Message in jar not found");
+                return insert;
+            }
             InputStreamReader lecture = new InputStreamReader(flux, StandardCharsets.UTF_8);
             BufferedReader buff = new BufferedReader(lecture);
             String ligne;
             boolean isNotUpdate = true;
             while ((ligne = buff.readLine()) != null && isNotUpdate) {
                 if (ligne.contains(what + ":")) {
-                    SCore.plugin.getServer().getLogger().info(SCore.NAME_2 + " Update of " + what + " in your for the plugin > " + plugin.getName() + " in language: " + GeneralConfig.getInstance().getLocale());
+                    Utils.sendConsoleMsg(SCore.NAME_COLOR + " &7Update of &6" + what + " &7in your for the plugin > &6" + plugin.getName() + " &7in language: &6" + GeneralConfig.getInstance().getLocale());
                     insert = ligne.split("\"")[1];
                     config.set(what, insert);
                     config.save(pdFile);
@@ -99,11 +103,11 @@ public class MessageMain {
             }
             buff.close();
             if (isNotUpdate) {
-                SCore.plugin.getServer().getLogger().severe(SCore.NAME_2 + " ERROR LOAD MESSAGE " + what + " for the plugin > " + plugin.getName() + " in language: " + GeneralConfig.getInstance().getLocale());
+                Utils.sendConsoleMsg("&c"+SCore.plugin.getNameWithBrackets() + " &cERROR LOAD MESSAGE &6" + what + " &cfor the plugin > &6" + plugin.getName() + " &cin language: &6" + GeneralConfig.getInstance().getLocale());
             }
         } catch (Exception e) {
-            SCore.plugin.getServer().getLogger().severe(SCore.NAME_2 + " ERROR LOAD MESSAGE "+ what + " for the plugin > " + plugin.getName() + " in language: " + GeneralConfig.getInstance().getLocale());
-            e.printStackTrace();
+            Utils.sendConsoleMsg("&c"+SCore.plugin.getNameWithBrackets() + " &cERROR LOAD MESSAGE &6"+ what + " &cfor the plugin > &6" + plugin.getName() + " &cin language: &6" + GeneralConfig.getInstance().getLocale());
+            //e.printStackTrace();
         }
 
         return insert;

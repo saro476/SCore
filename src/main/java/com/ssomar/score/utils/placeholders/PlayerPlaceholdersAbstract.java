@@ -6,6 +6,7 @@ import com.ssomar.score.utils.numbers.NTools;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Team;
 
@@ -65,9 +66,17 @@ public class PlayerPlaceholdersAbstract extends PlaceholdersInterface implements
     }
 
     public void reloadPlayerPlcHldr() {
-        Player player;
-        if (this.playerUUID != null && (player = Bukkit.getPlayer(playerUUID)) != null) {
+        if (this.playerUUID != null) {
 
+            if (PlaceholderLastDamageDealtEvent.getInstance().lastDamageDealt.containsKey(playerUUID)) {
+                this.lastDamageDealt = PlaceholderLastDamageDealtEvent.getInstance().lastDamageDealt.get(playerUUID);
+            } else this.lastDamageDealt = 0;
+
+            /* Pre save placeholders without calcul */
+            placeholders.put("%" + particle + "_uuid%", playerUUID.toString());
+
+            Player player;
+            if((player = Bukkit.getPlayer(playerUUID)) != null){
             Location pLoc = player.getLocation();
             this.x = NTools.reduceDouble(pLoc.getX(), 2);
             this.y = NTools.reduceDouble(pLoc.getY(), 2);
@@ -101,18 +110,6 @@ public class PlayerPlaceholdersAbstract extends PlaceholdersInterface implements
             String slot = player.getInventory().getHeldItemSlot() + "";
             if (fixSlot != -1) slot = fixSlot + "";
 
-            String team = "NO_TEAM";
-            for (Team t : Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeams()) {
-                if (t.hasEntry(player.getName())) {
-                    team = t.getName();
-                    break;
-                }
-            }
-
-            if (PlaceholderLastDamageDealtEvent.getInstance().lastDamageDealt.containsKey(playerUUID)) {
-                this.lastDamageDealt = PlaceholderLastDamageDealtEvent.getInstance().lastDamageDealt.get(playerUUID);
-            } else this.lastDamageDealt = 0;
-
             if(SCore.is1v16Plus()) {
                 attackCharge = player.getAttackCooldown();
             } else {
@@ -120,11 +117,6 @@ public class PlayerPlaceholdersAbstract extends PlaceholdersInterface implements
             }
 
             /* Pre save placeholders without calcul */
-
-            placeholders.put("%" + particle + "%", player.getName());
-            placeholders.put("%" + particle + "_name%", player.getName());
-            placeholders.put("%" + particle + "_uuid%", playerUUID.toString());
-
             /* I need to let that because old versions doesnt have particle */
             if (acceptWithoutParticle) {
                 placeholders.put("%world%", pLoc.getWorld().getName());
@@ -139,14 +131,37 @@ public class PlayerPlaceholdersAbstract extends PlaceholdersInterface implements
             placeholders.put("%" + particle + "_slot%", slot);
             placeholders.put("%" + particle + "_slot_live%", player.getInventory().getHeldItemSlot() + "");
             placeholders.put("%" + particle + "_direction%", direction);
-
-            placeholders.put("%" + particle + "_team%", team);
+            }
         }
     }
 
     public String replacePlaceholder(String s) {
         String toReplace = s;
         if (playerUUID != null) {
+
+            /* here for perf */
+            if(s.contains("%" + particle + "_uuid_array%")) toReplace = toReplace.replace("%" + particle + "_uuid_array%", convertedUUID(playerUUID));
+
+            /* WARNING GET NAME OF OFFLINE REQUIRE MANY PERFORMANCE THAT WHY IT IS HERE AND ONLY GET IF IT IS REALLY NEEDED */
+            if(s.contains("%" + particle + "%") || s.contains("%" + particle + "_name%") || s.contains("%" + particle + "_team%")) {
+                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerUUID);
+                String playerName = offlinePlayer.getName();
+                if (playerName != null) {
+                    String team = "NO_TEAM";
+                    for (Team t : Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeams()) {
+                        if (t.hasEntry(playerName)) {
+                            team = t.getName();
+                            break;
+                        }
+                    }
+
+                    /* Pre save placeholders without calcul */
+                    toReplace = toReplace.replace("%" + particle + "%", playerName);
+                    toReplace = toReplace.replace("%" + particle + "_name%", playerName);
+                    toReplace = toReplace.replace("%" + particle + "_team%", team);
+                }
+            }
+
 
             /* I need to let that because old versions doesnt have particle */
             if (acceptWithoutParticle) {
@@ -192,5 +207,34 @@ public class PlayerPlaceholdersAbstract extends PlaceholdersInterface implements
         }
 
         return toReplace;
+    }
+
+    public static String convertedUUID (UUID uuid) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[I;");
+        String uuidStr = uuid.toString().replaceAll("-", "").toUpperCase();
+        sb.append(getDecimal(uuidStr.substring(0, 8)));
+        //SsomarDev.testMsg("uuidStr.substring(0, 8) : "+uuidStr.substring(0, 8), true);
+        sb.append(",");
+        sb.append(getDecimal(uuidStr.substring(8, 16)));
+        sb.append(",");
+        sb.append(getDecimal(uuidStr.substring(16, 24)));
+        sb.append(",");
+        sb.append(getDecimal(uuidStr.substring(24, 32)));
+        sb.append("]");
+        return sb.toString();
+    }
+
+    public static int getDecimal(String hex){
+        String digits = "0123456789ABCDEF";
+        hex = hex.toUpperCase();
+        int val = 0;
+        for (int i = 0; i < hex.length(); i++)
+        {
+            char c = hex.charAt(i);
+            int d = digits.indexOf(c);
+            val = 16*val + d;
+        }
+        return val;
     }
 }

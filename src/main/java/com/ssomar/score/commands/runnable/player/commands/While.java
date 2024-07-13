@@ -22,6 +22,8 @@ import java.util.*;
 
 public class While extends PlayerCommand {
 
+    private static final boolean DEBUG = false;
+
     private static While instance;
 
     private final Map<UUID, List<BukkitRunnable>> whileTasks;
@@ -32,11 +34,12 @@ public class While extends PlayerCommand {
 
     @Override
     public void run(Player p, Player receiver, List<String> args, ActionInfo aInfo) {
+        SsomarDev.testMsg("WHILE STARTED", DEBUG);
 
         PlaceholderConditionFeature conditionFeature = PlaceholderConditionFeature.buildNull();
         conditionFeature.setType(PlaceholderConditionTypeFeature.buildNull(PlaceholdersCdtType.PLAYER_PLAYER));
         String condition = args.get(0);
-        int delay = Integer.valueOf(args.get(1));
+        int delay = (int) Double.parseDouble(aInfo.getSp().replacePlaceholder(args.get(1)));
 
         // "%"+c.getSymbol() because the placeholder can also contains comparator so to be sure the comparator is outside the placeholder we need to be sure there is a % before
         Comparator comparator = null;
@@ -61,25 +64,25 @@ public class While extends PlayerCommand {
             cmdsDef += cmd + " ";
         }
         cmdsDef = cmdsDef.trim();
-        SsomarDev.testMsg("WHILE CMD DEF: " + cmdsDef, true);
+        SsomarDev.testMsg("WHILE CMD DEF: " + cmdsDef, DEBUG);
         String[] cmdsArray = cmdsDef.split("<\\+>");
         List<String> cmds = new ArrayList<>();
         for (String cmd : cmdsArray) {
             cmds.add(cmd);
-            SsomarDev.testMsg("WHILE CMD: " + cmd, true);
+            SsomarDev.testMsg("WHILE CMD: " + cmd, DEBUG);
         }
 
         BukkitRunnable runnable3 = new BukkitRunnable() {
             @Override
             public void run() {
                 sp.reloadAllPlaceholders();
-                if(conditionFeature.verify(receiver, null, sp)) {
+                if(conditionFeature.verify(receiver, null, sp) && receiver.isOnline()) {
 
                     PlayerRunCommandsBuilder builder = new PlayerRunCommandsBuilder(cmds, aInfo);
                     CommandsExecutor.runCommands(builder);
                 }
                 else{
-                    SsomarDev.testMsg("WHILE STOPPED", true);
+                    SsomarDev.testMsg("WHILE STOPPED", DEBUG);
                     this.cancel();
                 }
             }
@@ -98,7 +101,7 @@ public class While extends PlayerCommand {
 
         if (args.size() < 3) return Optional.of(notEnoughArgs + getTemplate());
 
-        ArgumentChecker ac = checkInteger(args.get(1), isFinalVerification, getTemplate());
+        ArgumentChecker ac = checkDouble(args.get(1), false, getTemplate());
         if (!ac.isValid()) return Optional.of(ac.getError());
 
         return Optional.empty();

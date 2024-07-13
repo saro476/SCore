@@ -4,10 +4,11 @@ import com.ssomar.score.SCore;
 import com.ssomar.score.languages.messages.TM;
 import com.ssomar.score.languages.messages.Text;
 import com.ssomar.score.utils.FixedMaterial;
+import com.ssomar.score.utils.item.MakeItemGlow;
+import com.ssomar.score.utils.item.UpdateItemInGUI;
 import com.ssomar.score.utils.strings.StringConverter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -19,7 +20,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public abstract class GUI implements IGUI {
 
@@ -84,6 +84,8 @@ public abstract class GUI implements IGUI {
     private Inventory inv;
 
     private int size;
+
+    private final static boolean test = false;
 
 
     public GUI(String name, int size) {
@@ -156,21 +158,25 @@ public abstract class GUI implements IGUI {
 
     public void createItem(Material material, int amount, int invSlot, String displayName, boolean glow, boolean haveEnchant, String... loreString) {
 
+        if(test && size >= 54 & invSlot == 27) material = Material.DIAMOND_SWORD;
+
         ItemStack item = new ItemStack(material, amount);
         ItemMeta meta = item.getItemMeta();
         List<String> lore = new ArrayList<>();
 
 
         if (glow || haveEnchant) {
-            meta.addEnchant(Enchantment.PROTECTION_FALL, 6, true);
-            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            meta = MakeItemGlow.makeGlow(meta);
         }
 
         //meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-        meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+        ItemFlag additionnalFlag = SCore.is1v20v5Plus() ? ItemFlag.HIDE_ADDITIONAL_TOOLTIP : ItemFlag.valueOf("HIDE_POTION_EFFECTS");
+        meta.addItemFlags(additionnalFlag);
         meta.setDisplayName(StringConverter.coloredString(displayName));
 
         for (String s : loreString) lore.add(StringConverter.coloredString(s));
+
+        if(test && size >= 54 & invSlot == 27) meta.setCustomModelData(3);
 
         meta.setLore(lore);
         item.setItemMeta(meta);
@@ -197,12 +203,12 @@ public abstract class GUI implements IGUI {
 
 
         if (glow || haveEnchant) {
-            meta.addEnchant(Enchantment.PROTECTION_FALL, 6, true);
-            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            meta = MakeItemGlow.makeGlow(meta);
         }
 
         //meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-        meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+        ItemFlag additionnalFlag = SCore.is1v20v5Plus() ? ItemFlag.HIDE_ADDITIONAL_TOOLTIP : ItemFlag.valueOf("HIDE_POTION_EFFECTS");
+        meta.addItemFlags(additionnalFlag);
         meta.setDisplayName(StringConverter.coloredString(displayName));
 
         for (String s : loreString) lore.add(StringConverter.coloredString(s));
@@ -219,26 +225,36 @@ public abstract class GUI implements IGUI {
         ItemMeta meta = itemS.getItemMeta();
         List<String> lore = new ArrayList<>();
 
-
         if (glow || haveEnchant) {
-            meta.addEnchant(Enchantment.PROTECTION_FALL, 6, true);
-            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            meta = MakeItemGlow.makeGlow(meta);
         }
 
         //meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-        meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+        ItemFlag additionnalFlag = SCore.is1v20v5Plus() ? ItemFlag.HIDE_ADDITIONAL_TOOLTIP : ItemFlag.valueOf("HIDE_POTION_EFFECTS");
+        meta.addItemFlags(additionnalFlag);
         meta.setDisplayName(StringConverter.coloredString(displayName));
+        //SsomarDev.testMsg("meta>>>>>>>>>: "+meta.getDisplayName(), true);
 
         for (String s : loreString) lore.add(StringConverter.coloredString(s));
 
         meta.setLore(lore);
         itemS.setItemMeta(meta);
+        //SsomarDev.testMsg("meta>>>>>>>>>: "+itemS.getItemMeta().getDisplayName(), true);
         inv.setItem(invSlot, itemS);
 
     }
 
     public void createBackGroundItem(int slot) {
-        if (!SCore.is1v13Less()) createItem(Material.LIGHT_BLUE_STAINED_GLASS_PANE, 1, slot, "&7", true, false);
+        if(test && (size < 54 || slot != 27)) return;
+        if (!SCore.is1v13Less()){
+            ItemStack item = new ItemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE, 1);
+            if(SCore.is1v20v5Plus()){
+                ItemMeta meta = item.getItemMeta();
+                meta.setHideTooltip(true);
+                item.setItemMeta(meta);
+            }
+            createItem(item, 1, slot, "&7", true, false);
+        }
         else removeItem(slot);
     }
 
@@ -265,6 +281,17 @@ public abstract class GUI implements IGUI {
             }
         }
         return null;
+    }
+
+    public int getSlotByName(String name) {
+        int i = -1;
+        for (ItemStack item : inv.getContents()) {
+            i++;
+            if (item != null && item.hasItemMeta() && StringConverter.decoloredString(item.getItemMeta().getDisplayName()).equals(StringConverter.decoloredString(name))) {
+                return i;
+            }
+        }
+        return i;
     }
 
     public void openGUISync(Player player) {
@@ -306,7 +333,7 @@ public abstract class GUI implements IGUI {
         return null;
     }
 
-    public void updateCurrently(ItemStack item, String update, boolean withColor) {
+    public void updateCurrently(ItemStack item, String update, boolean withColor, String editorName) {
         ItemMeta meta = item.getItemMeta();
         List<String> lore = meta.getLore();
         int cpt = 0;
@@ -318,10 +345,16 @@ public abstract class GUI implements IGUI {
         else lore.set(cpt, StringConverter.coloredString("&7Currently: &e" + update));
         meta.setLore(lore);
         item.setItemMeta(meta);
+
+        //REQUIRED DUE TO A SPIGOT ISSUE THAT HAS BEEN FIXED UpdateItemInGUI.updateItemInGUI(this, editorName, meta.getDisplayName(), lore, item.getType());
+    }
+
+    public void updateCurrently(ItemStack item, String update, String editorName) {
+        updateCurrently(item, update, false, editorName);
     }
 
     public void updateCurrently(ItemStack item, String update) {
-        updateCurrently(item, update, false);
+        updateCurrently(item, update, false, "");
     }
 
     public String getCurrently(String itemName) {
@@ -333,17 +366,17 @@ public abstract class GUI implements IGUI {
     }
 
     public void updateCurrently(String itemName, String update) {
-        this.updateCurrently(this.getByName(itemName), update);
+        this.updateCurrently(this.getByName(itemName), update, itemName);
     }
 
     public void updateCurrently(String itemName, String update, Boolean withColor) {
-        this.updateCurrently(this.getByName(itemName), update, withColor);
+        this.updateCurrently(this.getByName(itemName), update, withColor, itemName);
     }
 
     public void updateCondition(String name, String condition) {
         ItemStack item = this.getByName(name);
-        if (condition.equals("")) this.updateCurrently(item, "&cNO CONDITION");
-        else this.updateCurrently(item, condition);
+        if (condition.equals("")) this.updateCurrently(item, "&cNO CONDITION", name);
+        else this.updateCurrently(item, condition, name);
     }
 
     public String getCondition(String name) {
@@ -371,6 +404,8 @@ public abstract class GUI implements IGUI {
         }
         toChange.setLore(loreUpdate);
         item.setItemMeta(toChange);
+
+        UpdateItemInGUI.updateItemInGUI(this, name, item.getItemMeta().getDisplayName(), loreUpdate, item.getType());
     }
 
     public List<String> getConditionList(String name, String emptyStr) {
@@ -429,21 +464,11 @@ public abstract class GUI implements IGUI {
     public void updateBoolean(String itemName, boolean value) {
         ItemStack item = this.getByName(itemName);
         if (value) {
-            ItemMeta meta = item.getItemMeta();
-            meta.addEnchant(org.bukkit.enchantments.Enchantment.DURABILITY, 1, true);
-            meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
-            item.setItemMeta(meta);
-
-            updateCurrently(item, "&aTrue");
+            MakeItemGlow.makeGlow(item);
+            updateCurrently(item, "&aTrue", itemName);
         } else {
-            ItemMeta meta = item.getItemMeta();
-            if (meta.hasEnchants()) {
-                for (Map.Entry<Enchantment, Integer> entry : meta.getEnchants().entrySet()) {
-                    meta.removeEnchant(entry.getKey());
-                }
-            }
-            item.setItemMeta(meta);
-            updateCurrently(item, "&cFalse");
+            MakeItemGlow.makeUnGlow(item);
+            updateCurrently(item, "&cFalse", itemName);
         }
     }
 
@@ -459,7 +484,7 @@ public abstract class GUI implements IGUI {
 
     public void updateInt(String itemName, int value) {
         ItemStack item = this.getByName(itemName);
-        updateCurrently(item, value + "");
+        updateCurrently(item, value + "", itemName);
     }
 
     public int getInt(String itemName) {
@@ -470,7 +495,7 @@ public abstract class GUI implements IGUI {
 
     public void updateDouble(String itemName, double value) {
         ItemStack item = this.getByName(itemName);
-        updateCurrently(item, value + "");
+        updateCurrently(item, value + "", itemName);
     }
 
     public double getDouble(String itemName) {

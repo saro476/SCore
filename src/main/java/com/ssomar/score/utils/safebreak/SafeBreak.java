@@ -13,10 +13,12 @@ import dev.rosewood.roseloot.loot.context.LootContextParams;
 import dev.rosewood.roseloot.loot.table.LootTableTypes;
 import dev.rosewood.roseloot.manager.LootTableManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Bisected;
+import org.bukkit.block.data.type.Door;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
@@ -37,7 +39,7 @@ public class SafeBreak {
 
         SsomarDev.testMsg("DEBUG SAFE BREAK 1", DEBUG);
         if (playerUUID == null) {
-            if (breakEB(block, drop)) return true;
+            if (breakEB(null, block, drop)) return true;
             block.breakNaturally();
             return true;
         }
@@ -69,11 +71,11 @@ public class SafeBreak {
                 /* */
                 Bukkit.getPluginManager().callEvent(bbE);
                 canceled = bbE.isCancelled();
-                drop = bbE.isDropItems() && drop;
+                if(!SCore.is1v11Less()) drop = bbE.isDropItems() && drop;
             }
 
             if (!canceled) {
-                if (breakEB(block, drop)) return true;
+                if (breakEB(player, block, drop)) return true;
 
                 breakRoseloot(player, block, drop);
 
@@ -88,7 +90,7 @@ public class SafeBreak {
             }
         } else {
             if(SCore.hasItemsAdder && ItemsAdderAPI.breakCustomBlock(block, null, drop)) return true;
-            if (breakEB(block, drop)) return true;
+            if (breakEB(null, block, drop)) return true;
 
             breakRoseloot(null, block, drop);
 
@@ -101,8 +103,8 @@ public class SafeBreak {
 
     public static void breakBlockNaturallyWith(Block block, Optional<ItemStack> itemStack, boolean drop) {
         //SsomarDev.testMsg("DEBUG SAFE BREAK 7", DEBUG);
-        if (!SCore.is1v13Less() && block.getBlockData() instanceof Bisected) {
-           // SsomarDev.testMsg("DEBUG SAFE BREAK 8", DEBUG);
+        if (!SCore.is1v13Less() && block.getBlockData() instanceof Door) {
+             SsomarDev.testMsg("DEBUG SAFE BREAK 8 BISECTED", DEBUG);
             Bisected b = (Bisected) block.getBlockData();
             if (b.getHalf().equals(Bisected.Half.BOTTOM)) {
                 //SsomarDev.testMsg("DEBUG SAFE BREAK 9", DEBUG);
@@ -129,7 +131,7 @@ public class SafeBreak {
                 };
                 SCore.schedulerHook.runTask(runnable3, 1);
             }
-        } else if (block.getType().toString().toUpperCase().contains("DOOR")) {
+        } else if (block.getType().toString().toUpperCase().contains("DOOR") && !block.getType().toString().toUpperCase().contains("TRAPDOOR")) {
             if (block.getRelative(BlockFace.UP).getType().toString().toUpperCase().contains("DOOR")) {
                 if (itemStack.isPresent() && drop) block.breakNaturally(itemStack.get());
                 else if (drop) block.breakNaturally();
@@ -185,14 +187,15 @@ public class SafeBreak {
         return false;
     }
 
-    public static boolean breakEB(Block block, boolean drop) {
+    public static boolean breakEB(@Nullable Player player, Block block, boolean drop) {
        //SsomarDev.testMsg("DEBUG SAFE BREAK 10", DEBUG);
+
         if (SCore.hasExecutableBlocks) {
            // SsomarDev.testMsg("DEBUG SAFE BREAK has EB", DEBUG);
             Optional<ExecutableBlockPlaced> eBPOpt = ExecutableBlocksAPI.getExecutableBlocksPlacedManager().getExecutableBlockPlaced(block);
             if (eBPOpt.isPresent()) {
                 //SsomarDev.testMsg("DEBUG SAFE BREAK has EB 2", DEBUG);
-                eBPOpt.get().breakBlock(null, drop);
+                eBPOpt.get().breakBlock(player, drop, null, ExecutableBlockPlaced.BreakMethod.CUSTOM);
                 return true;
             }
         }
@@ -200,6 +203,10 @@ public class SafeBreak {
     }
 
     public static boolean verifSafeBreak(@NotNull final UUID playerUUID, @NotNull Block block) {
+        return verifSafeBreak(playerUUID, block.getLocation());
+    }
+
+    public static boolean verifSafeBreak(@NotNull final UUID playerUUID, @NotNull Location location) {
 
         Player player = Bukkit.getServer().getPlayer(playerUUID);
 
@@ -208,38 +215,41 @@ public class SafeBreak {
         //SsomarDev.testMsg("DEBUG SAFE BREAK CDT 1");
 
         if (SCore.hasGriefPrevention)
-            if (!GriefPreventionAPI.playerCanBreakClaimBlock(playerUUID, block.getLocation())) return false;
+            if (!GriefPreventionAPI.playerCanBreakClaimBlock(playerUUID, location)) return false;
 
         // SsomarDev.testMsg("DEBUG SAFE BREAK CDT 2");
 
         if (SCore.hasIridiumSkyblock)
-            if (!IridiumSkyblockTool.playerCanBreakIslandBlock(playerUUID, block.getLocation())) return false;
+            if (!IridiumSkyblockTool.playerCanBreakIslandBlock(playerUUID, location)) return false;
 
         if (SCore.hasSuperiorSkyblock2)
-            if (!SuperiorSkyblockTool.playerCanBreakIslandBlock(playerUUID, block.getLocation())) return false;
+            if (!SuperiorSkyblockTool.playerCanBreakIslandBlock(playerUUID, location)) return false;
 
         if (SCore.hasBentoBox)
-            if (!BentoBoxAPI.playerCanBreakIslandBlock(playerUUID, block.getLocation())) return false;
+            if (!BentoBoxAPI.playerCanBreakIslandBlock(playerUUID, location)) return false;
 
         //SsomarDev.testMsg("DEBUG SAFE BREAK CDT 3");
 
         if (SCore.hasLands)
-            if (!new LandsIntegrationAPI(SCore.plugin).playerCanBreakClaimBlock(playerUUID, block.getLocation()))
+            if (!new LandsIntegrationAPI(SCore.plugin).playerCanBreakClaimBlock(playerUUID, location))
                 return false;
+
+        if(SCore.hasFactionsUUID)
+            if(!new FactionsUUIDAPI().playerCanBreakClaimBlock(playerUUID, location)) return false;
 
         //SsomarDev.testMsg("DEBUG SAFE BREAK CDT 4");
 
         if (SCore.hasWorldGuard)
-            if (!WorldGuardAPI.playerCanBreakInRegion(playerUUID, block.getLocation())) return false;
+            if (!WorldGuardAPI.playerCanBreakInRegion(playerUUID, location)) return false;
 
         if (SCore.hasResidence)
-            if (!ResidenceAPI.playerCanBreakClaimBlock(playerUUID, block.getLocation())) return false;
+            if (!ResidenceAPI.playerCanBreakClaimBlock(playerUUID, location)) return false;
 
         if(SCore.hasTowny)
-            if(!TownyToolAPI.playerCanBreakBlock(playerUUID, block.getLocation())) return false;
+            if(!TownyToolAPI.playerCanBreakBlock(playerUUID, location)) return false;
 
         if(SCore.hasProtectionStones)
-            if(!ProtectionStonesAPI.playerCanBreakClaimBlock(playerUUID, block.getLocation())) return false;
+            if(!ProtectionStonesAPI.playerCanBreakClaimBlock(playerUUID, location)) return false;
 
         return true;
     }

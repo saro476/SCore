@@ -1,7 +1,9 @@
 package com.ssomar.score.features.custom.conditions.player.parent;
 
+import com.ssomar.score.SCore;
 import com.ssomar.score.features.FeatureInterface;
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsInterface;
 import com.ssomar.score.features.FeatureWithHisOwnEditor;
 import com.ssomar.score.features.custom.conditions.player.PlayerConditionFeature;
 import com.ssomar.score.features.custom.conditions.player.PlayerConditionRequest;
@@ -12,7 +14,6 @@ import com.ssomar.score.utils.messages.SendMessage;
 import com.ssomar.score.utils.placeholders.StringPlaceholder;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -30,8 +31,8 @@ public class PlayerConditionsFeature extends FeatureWithHisOwnEditor<PlayerCondi
 
     private List<PlayerConditionFeature> conditions;
 
-    public PlayerConditionsFeature(FeatureParentInterface parent, String name, String editorName, String[] editorDescription) {
-        super(parent, name, editorName, editorDescription, Material.ANVIL, false);
+    public PlayerConditionsFeature(FeatureParentInterface parent, FeatureSettingsInterface featureSettings) {
+        super(parent, featureSettings);
         reset();
     }
 
@@ -49,8 +50,10 @@ public class PlayerConditionsFeature extends FeatureWithHisOwnEditor<PlayerCondi
         conditions.add(new IfNotBlocking(this));
         conditions.add(new IfGliding(this));
         conditions.add(new IfNotGliding(this));
-        conditions.add(new IfSwimming(this));
-        conditions.add(new IfNotSwimming(this));
+        if(!SCore.is1v11Less()) {
+            conditions.add(new IfSwimming(this));
+            conditions.add(new IfNotSwimming(this));
+        }
         conditions.add(new IfStunned(this));
         conditions.add(new IfNotStunned(this));
         conditions.add(new IfIsOnFire(this));
@@ -207,7 +210,7 @@ public class PlayerConditionsFeature extends FeatureWithHisOwnEditor<PlayerCondi
 
     @Override
     public PlayerConditionsFeature clone(FeatureParentInterface newParent) {
-        PlayerConditionsFeature clone = new PlayerConditionsFeature(newParent, getName(), getEditorName(), getEditorDescription());
+        PlayerConditionsFeature clone = new PlayerConditionsFeature(newParent, getFeatureSettings());
         List<PlayerConditionFeature> clones = new ArrayList<>();
         for (PlayerConditionFeature condition : conditions) {
             clones.add((PlayerConditionFeature) condition.clone(clone));

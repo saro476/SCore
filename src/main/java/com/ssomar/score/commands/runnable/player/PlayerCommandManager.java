@@ -4,9 +4,9 @@ import com.ssomar.score.SCore;
 import com.ssomar.score.commands.runnable.CommandManager;
 import com.ssomar.score.commands.runnable.SCommand;
 import com.ssomar.score.commands.runnable.mixed_player_entity.MixedCommandsManager;
-import com.ssomar.score.commands.runnable.player.commands.Around;
 import com.ssomar.score.commands.runnable.player.commands.*;
-import com.ssomar.score.commands.runnable.player.commands.While;
+import com.ssomar.score.commands.runnable.player.commands.absorption.Absorption;
+import com.ssomar.score.commands.runnable.player.commands.openchest.OpenChest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +22,7 @@ public class PlayerCommandManager extends CommandManager<SCommand> {
         commands.add(new Setlore());
         commands.add(new SetItemColor());
         commands.add(new SetItemName());
+        if(SCore.is1v20v5Plus()) commands.add(new SetItemMaterial());
         commands.add(new SetItemCustomModelData());
         commands.add(new SendBlankMessage());
         commands.add(new SendMessage());
@@ -53,7 +54,6 @@ public class PlayerCommandManager extends CommandManager<SCommand> {
         commands.add(new MixHotbar());
         commands.add(new SetExecutableBlock());
         commands.add(new SetMaterialCooldown());
-        commands.add(new RegainHealth());
         commands.add(new RegainFood());
         commands.add(new RegainMagic());
         commands.add(new RegainSaturation());
@@ -78,8 +78,10 @@ public class PlayerCommandManager extends CommandManager<SCommand> {
         commands.add(new RemoveEnchantment());
         commands.add(new Chat());
         commands.add(new DropSpecificEI());
-        commands.add(new OpenChest());
+        commands.add(OpenChest.getInstance());
         commands.add(new EICooldown());
+        commands.add(new EBCooldown());
+        commands.add(new EECooldown());
         commands.add(new AddItemAttribute());
         commands.add(new SetItemAttribute());
         commands.add(new SetArmorTrim());
@@ -90,7 +92,9 @@ public class PlayerCommandManager extends CommandManager<SCommand> {
             commands.add(new OpenEnderchest());
         }
         commands.add(XpBoost.getInstance());
+        commands.add(JobsMoneyBoost.getInstance());
         commands.add(While.getInstance());
+        commands.add(new If());
 
         commands.addAll(MixedCommandsManager.getInstance().getCommands());
 

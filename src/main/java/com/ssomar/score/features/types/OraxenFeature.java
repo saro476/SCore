@@ -6,8 +6,10 @@ import com.ssomar.score.editor.NewGUIManager;
 import com.ssomar.score.features.FeatureAbstract;
 import com.ssomar.score.features.FeatureParentInterface;
 import com.ssomar.score.features.FeatureRequireOnlyClicksInEditor;
+import com.ssomar.score.features.FeatureSettingsInterface;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.splugin.SPlugin;
+import com.ssomar.score.utils.item.UpdateItemInGUI;
 import com.ssomar.score.utils.strings.StringConverter;
 import io.th0rgal.oraxen.api.OraxenBlocks;
 import io.th0rgal.oraxen.api.OraxenFurniture;
@@ -15,13 +17,11 @@ import io.th0rgal.oraxen.api.OraxenItems;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Rotation;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -35,8 +35,8 @@ public class OraxenFeature extends FeatureAbstract<Optional<String>, OraxenFeatu
     private static final boolean DEBUG = false;
     private Optional<String> value;
 
-    public OraxenFeature(FeatureParentInterface parent, String name, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public OraxenFeature(FeatureParentInterface parent, FeatureSettingsInterface featureSettings) {
+        super(parent, featureSettings);
         this.value = Optional.empty();
     }
 
@@ -79,7 +79,7 @@ public class OraxenFeature extends FeatureAbstract<Optional<String>, OraxenFeatu
             String id = getValue().get();
             //SsomarDev.testMsg("id: " + id, true);
             if(OraxenFurniture.isFurniture(id)){
-                OraxenFurniture.place(location, id, Rotation.NONE, BlockFace.UP);
+                OraxenFurniture.place(id, location, Rotation.NONE, BlockFace.UP);
                 return true;
             }
             else if (OraxenBlocks.isOraxenBlock(id)) {
@@ -103,7 +103,7 @@ public class OraxenFeature extends FeatureAbstract<Optional<String>, OraxenFeatu
             }
             else if(OraxenFurniture.isFurniture(block)) {
                 SsomarDev.testMsg("isFurniture", true);
-                OraxenFurniture.getFurnitureMechanic(block).removeSolid(block);
+                OraxenFurniture.remove(block.getLocation(), null);
             }
             else if (OraxenBlocks.isOraxenBlock(block)) {
                 SsomarDev.testMsg("isOraxenBlock", true);
@@ -144,7 +144,7 @@ public class OraxenFeature extends FeatureAbstract<Optional<String>, OraxenFeatu
 
     @Override
     public OraxenFeature clone(FeatureParentInterface newParent) {
-        OraxenFeature clone = new OraxenFeature(newParent, this.getName(), getEditorName(), getEditorDescription(), getEditorMaterial(), requirePremium());
+        OraxenFeature clone = new OraxenFeature(newParent, getFeatureSettings());
         clone.value = value;
         return clone;
     }
@@ -303,13 +303,9 @@ public class OraxenFeature extends FeatureAbstract<Optional<String>, OraxenFeatu
         }
         meta.setLore(lore);
         item.setItemMeta(meta);
-        /* Update the gui only for the right click , for the left it updated automaticaly idk why */
-        for (HumanEntity e : gui.getInv().getViewers()) {
-            if (e instanceof Player) {
-                Player p = (Player) e;
-                p.updateInventory();
-            }
-        }
+
+        /* Bug item no update idk why */
+        UpdateItemInGUI.updateItemInGUI(gui, getEditorName(), meta.getDisplayName(), lore, item.getType());
     }
 
     public Optional<String> getOraxen(GUI gui) {

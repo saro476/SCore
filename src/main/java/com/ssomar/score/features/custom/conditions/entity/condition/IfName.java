@@ -1,11 +1,11 @@
 package com.ssomar.score.features.custom.conditions.entity.condition;
 
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionFeature;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionRequest;
 import com.ssomar.score.features.types.list.ListColoredStringFeature;
 import com.ssomar.score.utils.strings.StringConverter;
-import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.Optional;
 public class IfName extends EntityConditionFeature<ListColoredStringFeature, IfName> {
 
     public IfName(FeatureParentInterface parent) {
-        super(parent, "ifName", "If name", new String[]{}, Material.ANVIL, false);
+        super(parent, FeatureSettingsSCore.ifName);
     }
 
     @Override
@@ -22,7 +22,7 @@ public class IfName extends EntityConditionFeature<ListColoredStringFeature, IfN
         if (hasCondition()) {
             Entity entity = request.getEntity();
             boolean notValid = true;
-            for (String name : getCondition().getValue()) {
+            for (String name : getCondition().getValue(request.getSp())) {
                 if (StringConverter.decoloredString(entity.getName()).equalsIgnoreCase(name)) {
                     notValid = false;
                     break;
@@ -44,7 +44,7 @@ public class IfName extends EntityConditionFeature<ListColoredStringFeature, IfN
 
     @Override
     public void subReset() {
-        setCondition(new ListColoredStringFeature(getParent(), "ifName", new ArrayList<>(), "If name", new String[]{}, Material.ANVIL, false, true, Optional.empty()));
+        setCondition(new ListColoredStringFeature(getParent(),  new ArrayList<>(), FeatureSettingsSCore.ifName, true, Optional.empty()));
     }
 
     @Override

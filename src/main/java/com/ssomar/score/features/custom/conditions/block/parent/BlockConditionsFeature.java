@@ -3,6 +3,7 @@ package com.ssomar.score.features.custom.conditions.block.parent;
 import com.ssomar.score.SCore;
 import com.ssomar.score.features.FeatureInterface;
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsInterface;
 import com.ssomar.score.features.FeatureWithHisOwnEditor;
 import com.ssomar.score.features.custom.conditions.block.BlockConditionFeature;
 import com.ssomar.score.features.custom.conditions.block.BlockConditionRequest;
@@ -12,12 +13,10 @@ import com.ssomar.score.splugin.SPlugin;
 import com.ssomar.score.utils.messages.SendMessage;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,8 +31,8 @@ public class BlockConditionsFeature extends FeatureWithHisOwnEditor<BlockConditi
 
     private List<BlockConditionFeature> conditions;
 
-    public BlockConditionsFeature(FeatureParentInterface parent, String name, String editorName, String[] editorDescription) {
-        super(parent, name, editorName, editorDescription, Material.ANVIL, false);
+    public BlockConditionsFeature(FeatureParentInterface parent, FeatureSettingsInterface featureSettings) {
+        super(parent, featureSettings);
         reset();
     }
 
@@ -47,16 +46,20 @@ public class BlockConditionsFeature extends FeatureWithHisOwnEditor<BlockConditi
         conditions.add(new IfMustBeNotNatural(this));
         conditions.add(new IfPlayerMustBeOnTheBlock(this));
         conditions.add(new IfNoPlayerMustBeOnTheBlock(this));
-        if(!SCore.is1v12Less()) conditions.add(new IfPlantFullyGrown(this));
-        if(!SCore.is1v12Less()) conditions.add(new IfPlantNotFullyGrown(this));
-        conditions.add(new IfContainerEmpty(this));
-        conditions.add(new IfContainerNotEmpty(this));
-        conditions.add(new IfContainerContains(this));
-        conditions.add(new IfContainerContainsEI(this));
-        conditions.add(new IfContainerContainsSellableItem(this));
+        if (!SCore.is1v12Less()) {
+            conditions.add(new IfPlantFullyGrown(this));
+            conditions.add(new IfPlantNotFullyGrown(this));
+        }
+        if (!SCore.is1v11Less()) {
+            conditions.add(new IfContainerEmpty(this));
+            conditions.add(new IfContainerNotEmpty(this));
+            conditions.add(new IfContainerContains(this));
+            conditions.add(new IfContainerContainsEI(this));
+            conditions.add(new IfContainerContainsSellableItem(this));
+        }
 
         /* Number condition features */
-        if(!SCore.is1v12Less()) conditions.add(new IfBlockAge(this));
+        if (!SCore.is1v12Less()) conditions.add(new IfBlockAge(this));
         conditions.add(new IfBlockLocationX(this));
         conditions.add(new IfBlockLocationY(this));
         conditions.add(new IfBlockLocationZ(this));
@@ -68,29 +71,19 @@ public class BlockConditionsFeature extends FeatureWithHisOwnEditor<BlockConditi
 
     public boolean verifConditions(Block block, Optional<Player> playerOpt, SendMessage messageSender, @Nullable Event event) {
 
-        final boolean[] result = {true};
 
-        BukkitRunnable runnable = new BukkitRunnable() {
-            @Override
-            public void run() {
-                BlockConditionRequest request = new BlockConditionRequest(block, playerOpt, messageSender.getSp(), event);
-                for (BlockConditionFeature condition : conditions) {
-                    if (!condition.verifCondition(request)) {
-                        if (messageSender != null && playerOpt.isPresent()) {
-                            for (String error : request.getErrorsFinal()) {
-                                messageSender.sendMessage(playerOpt.get(), error);
-                            }
-                        }
-                        result[0] = false;
+        BlockConditionRequest request = new BlockConditionRequest(block, playerOpt, messageSender.getSp(), event);
+        for (BlockConditionFeature condition : conditions) {
+            if (!condition.verifCondition(request)) {
+                if (messageSender != null && playerOpt.isPresent()) {
+                    for (String error : request.getErrorsFinal()) {
+                        messageSender.sendMessage(playerOpt.get(), error);
                     }
                 }
-                result[0] = true;
+                return false;
             }
-        };
-        SCore.schedulerHook.runLocationTask(runnable, block.getLocation(), 0);
-
-        return result[0];
-
+        }
+        return true;
     }
 
 
@@ -150,7 +143,7 @@ public class BlockConditionsFeature extends FeatureWithHisOwnEditor<BlockConditi
 
     @Override
     public BlockConditionsFeature clone(FeatureParentInterface newParent) {
-        BlockConditionsFeature clone = new BlockConditionsFeature(newParent, getName(), getEditorName(), getEditorDescription());
+        BlockConditionsFeature clone = new BlockConditionsFeature(newParent, getFeatureSettings());
         List<BlockConditionFeature> clones = new ArrayList<>();
         for (BlockConditionFeature condition : conditions) {
             clones.add((BlockConditionFeature) condition.clone(clone));

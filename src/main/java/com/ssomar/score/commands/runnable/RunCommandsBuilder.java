@@ -2,6 +2,7 @@ package com.ssomar.score.commands.runnable;
 
 import com.ssomar.score.utils.messages.SendMessage;
 import com.ssomar.score.utils.strings.StringConverter;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -12,12 +13,14 @@ public abstract class RunCommandsBuilder {
     private List<String> commands;
     private ActionInfo actionInfo;
     /* delay in tick - commands */
-    private HashMap<Integer, List<RunCommand>> finalCommands = new HashMap<>();
+    private TreeMap<Integer, List<RunCommand>> finalCommands = new TreeMap<>();
 
     public RunCommandsBuilder(List<String> commands, ActionInfo actionInfo) {
         this.actionInfo = actionInfo;
+        //SsomarDev.testMsg("CURRENT STEP: "+actionInfo.getStep(), true);
         this.commands = commands;
         this.init();
+        //SsomarDev.testMsg("CURRENT STEP after init: "+actionInfo.getStep(), true);
     }
 
     public static SendMessage getSm() {
@@ -29,10 +32,10 @@ public abstract class RunCommandsBuilder {
     }
 
     public void init() {
-        /* System.out.println("=================== init commands ==========================");
+        /* SsomarDev.testMsg("=================== init  commands ==========================", true);
         for (String s : this.commands) {
-            System.out.println(s);
-        }*/
+            SsomarDev.testMsg(s, true);
+        } */
         this.commands = this.replaceFor(this.commands);
         /*System.out.println("=================== after for  commands ==========================");
         for (String s : this.commands) {
@@ -40,18 +43,33 @@ public abstract class RunCommandsBuilder {
         }*/
         this.commands = this.replaceLoop(commands);
         this.initFinalCommands();
+        /* SsomarDev.testMsg("=================== finals   commands ==========================", true);
+        for (String s : this.commands) {
+            SsomarDev.testMsg(s, true);
+        } */
     }
 
-    public List<String> selectRandomCommands(List<String> commands, Integer amount) {
+    public List<String> selectRandomCommands(List<String> commands, Integer amount, @Nullable NothingObject nothingObject) {
         List<String> commandsList = new ArrayList<>(commands);
 
         List<String> result = new ArrayList<>();
 
+        int nothingTotal = 0;
+        if (nothingObject != null) {
+            nothingTotal = nothingObject.getNothingCount();
+        }
+
         for (int i = 0; i < amount; i++) {
-            if (commandsList.size() == 0) return result;
-            int rdn = (int) (Math.random() * commandsList.size());
-            result.add(commandsList.get(rdn));
-            commandsList.remove(rdn);
+            int commandsSize = commandsList.size();
+            if (commandsSize == 0) return result;
+            int rdn = (int) (Math.random() * (commandsSize+nothingTotal));
+            if(rdn >= commandsSize) {
+                nothingTotal--;
+                if(nothingObject.hasNothingString()) result.add(nothingObject.getNothingString());
+            } else {
+                result.add(commandsList.get(rdn));
+                commandsList.remove(rdn);
+            }
         }
         return result;
     }
@@ -74,7 +92,7 @@ public abstract class RunCommandsBuilder {
                         if (secondPart.contains("%")) {
                             secondPart = actionInfo.getSp().replacePlaceholder(secondPart, true);
                         }
-                        loopAmount = Integer.parseInt(secondPart);
+                        loopAmount = Double.valueOf(secondPart).intValue();
                         isInLoop = true;
                         continue;
                     } catch (Exception e) {
@@ -221,14 +239,6 @@ public abstract class RunCommandsBuilder {
 
     public abstract RunCommand buildRunCommand(Integer delay, String command, ActionInfo aInfo);
 
-    public List<RunCommand> buildRunCommands(Integer delay, List<String> command) {
-        List<RunCommand> result = new ArrayList<>();
-        for (String s : commands) {
-            result.add(this.buildRunCommand(delay, s, actionInfo));
-        }
-        return result;
-    }
-
     public void inserFinalCommands(Integer delay, String command) {
         RunCommand runCommand = this.buildRunCommand(delay, command, actionInfo);
         if (finalCommands.containsKey(delay)) {
@@ -239,49 +249,35 @@ public abstract class RunCommandsBuilder {
         }
     }
 
-    public void inserFinalCommands(Integer delay, List<String> commands) {
-        List<RunCommand> runCommands = this.buildRunCommands(delay, commands);
-        if (finalCommands.containsKey(delay)) {
-            finalCommands.get(delay).addAll(runCommands);
-        } else finalCommands.put(delay, runCommands);
-    }
+    public static Map<String, String> nothingMap = new HashMap<String, String>(){{
+        put("nothing*", "nothing\\*");
+        put("NOTHING*", "NOTHING\\*");
+    }};
 
-    public List<String> replaceNothing(String command) {
-        List<String> result = new ArrayList<>();
+    public Optional<NothingObject> replaceNothing(String command) {
 
-        if (command.contains("nothing*")) {
-            command = actionInfo.getSp().replacePlaceholder(command, true);
-            try {
-                int m = 0;
-                if (command.contains("//")) m = Integer.parseInt(command.split("nothing\\*")[1].split("//")[0].trim());
-                else m = Integer.parseInt(command.split("nothing\\*")[1]);
+        for (Map.Entry<String, String> entry : nothingMap.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (command.contains(key)) {
+                command = actionInfo.getSp().replacePlaceholder(command, true);
+                try {
+                    int m;
+                    String nothingString = "";
+                    if (command.contains("//") && !command.contains("https://")){
+                        m = Integer.parseInt(command.split(value)[1].split("//")[0].trim());
+                        nothingString = "SENDMESSAGE " + command.split("//")[1];
+                    }
+                    else m = Integer.parseInt(command.split(value)[1]);
 
-                for (int k = 0; k < m; k++) {
-                    if (command.contains("//")) result.add("SENDMESSAGE " + command.split("//")[1]);
-                    else result.add("");
+                   NothingObject nothingObject = new NothingObject(m, nothingString);
+                   return Optional.of(nothingObject);
+                } catch (Exception err) {
+                    return Optional.empty();
                 }
-
-            } catch (Exception err) {
-                return Collections.singletonList(command);
             }
-        } else if (command.contains("NOTHING*")) {
-            command = actionInfo.getSp().replacePlaceholder(command, true);
-            try {
-                int m = 0;
-                if (command.contains("//") && !command.contains("https://"))
-                    m = Integer.parseInt(command.split("NOTHING\\*")[1].split("//")[0].trim());
-                else m = Integer.parseInt(command.split("NOTHING\\*")[1]);
-
-                for (int k = 0; k < m; k++) {
-                    if (command.contains("//") && !command.contains("https://"))
-                        result.add("SENDMESSAGE " + command.split("//")[1]);
-                    else result.add("");
-                }
-            } catch (Exception err) {
-                return Collections.singletonList(command);
-            }
-        } else return Collections.singletonList(command);
-        return result;
+        }
+        return Optional.empty();
     }
 
     /*
@@ -291,12 +287,13 @@ public abstract class RunCommandsBuilder {
 
         List<String> result = new ArrayList<>();
         List<String> commandsRandom = new ArrayList<>();
+        NothingObject nothingObject = null;
         boolean inRandom = false;
         int nbRandom = 0;
 
         for (String command : commands) {
 
-            if (command.contains("RANDOM RUN:") && !command.startsWith("AROUND") && !command.startsWith("MOB_AROUND") && !command.startsWith("ALL_PLAYERS") && !command.startsWith("ALL_MOBS") && !command.startsWith("NEAREST") && !command.startsWith("MOB_NEAREST")) {
+            if (command.contains("RANDOM RUN:") && !AllCommandsManager.getInstance().startsWithCommandThatRunCommands(command)) {
                 String secondPart = command.split("RANDOM RUN:")[1].replaceAll(" ", "");
                 if (secondPart.contains("%")) {
                     secondPart = actionInfo.getSp().replacePlaceholder(secondPart, true);
@@ -304,20 +301,24 @@ public abstract class RunCommandsBuilder {
                 nbRandom = Integer.parseInt(secondPart);
                 inRandom = true;
                 continue;
-            } else if (command.contains("RANDOM END") && !command.startsWith("AROUND") && !command.startsWith("MOB_AROUND") && !command.startsWith("ALL_PLAYERS") && !command.startsWith("ALL_MOBS") && !command.startsWith("NEAREST") && !command.startsWith("MOB_NEAREST")) {
-                result.addAll(this.selectRandomCommands(commandsRandom, nbRandom));
+            } else if (command.contains("RANDOM END") && !AllCommandsManager.getInstance().startsWithCommandThatRunCommands(command)) {
+                result.addAll(this.selectRandomCommands(commandsRandom, nbRandom, nothingObject));
                 inRandom = false;
                 commandsRandom.clear();
                 nbRandom = 0;
                 continue;
             } else if (inRandom) {
-                commandsRandom.addAll(this.replaceNothing(command));
+                Optional<NothingObject> nothingObjectOpt = this.replaceNothing(command);
+                if (nothingObjectOpt.isPresent()) {
+                    nothingObject = nothingObjectOpt.get();
+                }
+                else commandsRandom.add(command);
                 continue;
             } else result.add(command);
         }
 
         if (commandsRandom.size() > 0) {
-            result.addAll(this.selectRandomCommands(commandsRandom, nbRandom));
+            result.addAll(this.selectRandomCommands(commandsRandom, nbRandom, nothingObject));
         }
 
         return result;
@@ -391,7 +392,7 @@ public abstract class RunCommandsBuilder {
             }
 
             /* The delay for AROUND and MOB_AROUND is catch after */
-            if (command.contains("DELAYTICK ") && !command.startsWith("AROUND") && !command.startsWith("MOB_AROUND") && !command.startsWith("ALL_PLAYERS") && !command.startsWith("ALL_MOBS") && !command.startsWith("NEAREST") && !command.startsWith("MOB_NEAREST")) {
+            if (command.contains("DELAYTICK ")  && !command.startsWith("IF") && !AllCommandsManager.getInstance().startsWithCommandThatRunCommands(command)) {
                 /* Verify that there is no multiple commands after DELAYTICK */
                 String delayStr = command;
                 if (command.contains("+++")) {
@@ -406,7 +407,7 @@ public abstract class RunCommandsBuilder {
                     secondPart = actionInfo.getSp().replacePlaceholder(secondPart, true);
                 }
                 delay = delay + (Integer.parseInt(secondPart));
-            } else if (command.contains("DELAY ") && !command.startsWith("AROUND") && !command.startsWith("MOB_AROUND") && !command.startsWith("ALL_PLAYERS") && !command.startsWith("ALL_MOBS") && !command.startsWith("NEAREST") && !command.startsWith("MOB_NEAREST")) {
+            } else if (command.contains("DELAY ") && !command.startsWith("IF") && !AllCommandsManager.getInstance().startsWithCommandThatRunCommands(command)) {
                 /* Verify that there is no multiple commands after DELAY */
                 String delayStr = command;
                 if (command.contains("+++")) {
@@ -445,11 +446,11 @@ public abstract class RunCommandsBuilder {
         this.actionInfo = actionInfo;
     }
 
-    public HashMap<Integer, List<RunCommand>> getFinalCommands() {
+    public TreeMap<Integer, List<RunCommand>> getFinalCommands() {
         return finalCommands;
     }
 
-    public void setFinalCommands(HashMap<Integer, List<RunCommand>> finalCommands) {
+    public void setFinalCommands(TreeMap<Integer, List<RunCommand>> finalCommands) {
         this.finalCommands = finalCommands;
     }
 }

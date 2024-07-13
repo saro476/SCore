@@ -28,17 +28,28 @@ public class PlayerCommandsQuery {
 
 
     public static void createNewTable(Connection conn) {
-        try (Statement stmt = conn.createStatement()) {
+        if (Database.DEBUG) Utils.sendConsoleMsg("PlayerCommandsQuery createNewTable");
+        Statement stmt = null;
+        try {
+            stmt = conn.createStatement();
             Utils.sendConsoleMsg(SCore.NAME_COLOR + " &7Creating table &6" + TABLE_COMMANDS_PLAYER_NAME + " &7if not exists...");
             stmt.execute(CREATE_TABLE);
         } catch (SQLException e) {
             SCore.plugin.getLogger().severe("Error while creating table " + TABLE_COMMANDS_PLAYER_NAME + " in database "+e.getMessage());
         }
+        finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
 
     public static void insertCommand(Connection conn, List<PlayerRunCommand> commands, boolean async) {
-
         if (async) {
             BukkitRunnable runnable = new BukkitRunnable() {
                 @Override
@@ -52,6 +63,7 @@ public class PlayerCommandsQuery {
 
 
     public static void insertCommand(Connection conn, List<PlayerRunCommand> commands) {
+        if (Database.DEBUG) Utils.sendConsoleMsg("PlayerCommandsQuery insertCommand");
 
         String sql = "INSERT INTO " + TABLE_COMMANDS_PLAYER + " (" + COL_UUID_LAUNCHER + "," + COL_UUID_RECEIVER + "," + COL_BRUT_COMMAND + "," + COL_RUN_TIME + "," + COL_ACTION_INFO + ") VALUES(?,?,?,?,?)";
 
@@ -69,7 +81,7 @@ public class PlayerCommandsQuery {
                 try {
                     pstmt.setString(5, ActionInfoSerializer.toString(command.getaInfo()));
                 } catch (IOException err) {
-                    SCore.plugin.getLogger().severe(SCore.NAME_2 + " Couldn't save the delayed command: "+command.getBrutCommand()+" >>" + err.getMessage());
+                    SCore.plugin.getLogger().severe(SCore.NAME_COLOR_WITH_BRACKETS + " Couldn't save the delayed command: "+command.getBrutCommand()+" >>" + err.getMessage());
                     //err.printStackTrace();
                     continue;
                 }
@@ -80,7 +92,7 @@ public class PlayerCommandsQuery {
                 }
             }
         } catch (SQLException e) {
-            Utils.sendConsoleMsg(SCore.NAME_2 + " " + e.getMessage());
+            Utils.sendConsoleMsg(SCore.NAME_COLOR_WITH_BRACKETS + " " + e.getMessage());
             e.printStackTrace();
         } finally {
             if (pstmt != null) {
@@ -95,6 +107,7 @@ public class PlayerCommandsQuery {
 
 
     public static void deleteCommandsForPlayer(Connection conn, UUID uuid) {
+        if (Database.DEBUG) Utils.sendConsoleMsg("PlayerCommandsQuery deleteCommandsForPlayer");
 
         String sql = "DELETE FROM " + TABLE_COMMANDS_PLAYER + " where " + COL_UUID_RECEIVER + "=?";
 
@@ -105,7 +118,7 @@ public class PlayerCommandsQuery {
             pstmt.setString(1, uuid.toString());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println(SCore.NAME_2 + " " + e.getMessage());
+            System.out.println(SCore.NAME_COLOR_WITH_BRACKETS + " " + e.getMessage());
         } finally {
             if (pstmt != null) {
                 try {
@@ -118,6 +131,7 @@ public class PlayerCommandsQuery {
     }
 
     public static void deleteCommands(Connection conn) {
+        if (Database.DEBUG) Utils.sendConsoleMsg("PlayerCommandsQuery deleteCommands");
 
         String sql = "DELETE FROM " + TABLE_COMMANDS_PLAYER;
 
@@ -127,7 +141,7 @@ public class PlayerCommandsQuery {
             pstmt = conn.prepareStatement(sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println(SCore.NAME_2 + " " + e.getMessage());
+            System.out.println(SCore.NAME_COLOR_WITH_BRACKETS + " " + e.getMessage());
         } finally {
             if (pstmt != null) {
                 try {
@@ -193,6 +207,7 @@ public class PlayerCommandsQuery {
     }*/
 
     public static Map<UUID, List<PlayerRunCommand>> loadSavedCommands(Connection conn) {
+        if (Database.DEBUG) Utils.sendConsoleMsg("PlayerCommandsQuery loadSavedCommands");
         String sql = "SELECT " + COL_BRUT_COMMAND + "," + COL_RUN_TIME + "," + COL_ACTION_INFO + "," + COL_UUID_RECEIVER + " FROM " + TABLE_COMMANDS_PLAYER + " ORDER BY " + COL_RUN_TIME;
 
         Map<UUID, List<PlayerRunCommand>> map = new HashMap<>();
@@ -229,7 +244,7 @@ public class PlayerCommandsQuery {
                 } else map.put(uuidReceiver, new ArrayList<>(Collections.singletonList(pCommand)));
             }
         } catch (SQLException e) {
-            System.out.println(SCore.NAME_2 + " " + e.getMessage());
+            System.out.println(SCore.NAME_COLOR_WITH_BRACKETS + " " + e.getMessage());
         } finally {
             if (rs != null) {
                 try {

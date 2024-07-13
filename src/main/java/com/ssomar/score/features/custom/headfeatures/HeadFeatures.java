@@ -5,6 +5,7 @@ import com.mojang.authlib.properties.Property;
 import com.ssomar.score.SCore;
 import com.ssomar.score.features.FeatureInterface;
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.FeatureWithHisOwnEditor;
 import com.ssomar.score.features.types.UncoloredStringFeature;
 import com.ssomar.score.menu.GUI;
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,14 +41,14 @@ public class HeadFeatures extends FeatureWithHisOwnEditor<HeadFeatures, HeadFeat
     private UncoloredStringFeature headDBID;
 
     public HeadFeatures(FeatureParentInterface parent) {
-        super(parent, "--", "Head Features", new String[]{"&7&oTextures for the head"}, FixedMaterial.getHead(), false);
+        super(parent, FeatureSettingsSCore.headFeatures);
         reset();
     }
 
     @Override
     public void reset() {
-        this.headValue = new UncoloredStringFeature(this, "headValue", Optional.empty(), "Head Value", new String[]{"&7&oThe value of the head", "&eminecraft-heads.com"}, FixedMaterial.getHead(), false, false);
-        this.headDBID = new UncoloredStringFeature(this, "headDBID", Optional.empty(), "HeadDB ID", new String[]{"&7&oThe HeadDB ID of the head", "&7&oWork with: ", "&7&o- &bHeadDB(Free)", "&7&o- &cHead Database(Prem)"}, FixedMaterial.getHead(), true, false);
+        this.headValue = new UncoloredStringFeature(this, Optional.empty(), FeatureSettingsSCore.headValue, false);
+        this.headDBID = new UncoloredStringFeature(this, Optional.empty(), FeatureSettingsSCore.headDBID, false);
     }
 
     @Override
@@ -83,26 +85,35 @@ public class HeadFeatures extends FeatureWithHisOwnEditor<HeadFeatures, HeadFeat
             }
         } else if (headValue.getValue().isPresent() && !SCore.is1v12Less()) {
             ItemStack newHead = new ItemStack(Material.PLAYER_HEAD);
-
             SkullMeta itemMeta = (SkullMeta) newHead.getItemMeta();
-            GameProfile profile = getGameProfile(this.headValue.getValue().get());
-            Field profileField = null;
-            try {
-                profileField = itemMeta.getClass().getDeclaredField("profile");
-            } catch (NoSuchFieldException e1) {
-                e1.printStackTrace();
-            } catch (SecurityException e1) {
-                e1.printStackTrace();
+
+            if(SCore.is1v18Plus()){
+                try {
+                    newHead = HeadBuilder118.getHead(HeadBuilder118.getUrlFromBase64(headValue.getValue().get()).toString());
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
             }
-            profileField.setAccessible(true);
-            try {
-                profileField.set(itemMeta, profile);
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
+            else {
+                GameProfile profile = getGameProfile(this.headValue.getValue().get());
+                Field profileField = null;
+                try {
+                    profileField = itemMeta.getClass().getDeclaredField("profile");
+                } catch (NoSuchFieldException e1) {
+                    e1.printStackTrace();
+                } catch (SecurityException e1) {
+                    e1.printStackTrace();
+                }
+                profileField.setAccessible(true);
+                try {
+                    profileField.set(itemMeta, profile);
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                newHead.setItemMeta((ItemMeta) itemMeta);
             }
-            newHead.setItemMeta((ItemMeta) itemMeta);
             return newHead;
         }
 

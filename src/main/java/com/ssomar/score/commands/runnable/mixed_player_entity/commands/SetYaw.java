@@ -5,8 +5,9 @@ import com.ssomar.score.commands.runnable.ArgumentChecker;
 import com.ssomar.score.commands.runnable.mixed_player_entity.MixedCommand;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,12 +17,16 @@ public class SetYaw extends MixedCommand {
 
 
     @Override
-    public void run(Player p, LivingEntity receiver, List<String> args, ActionInfo aInfo) {
+    public void run(Player p, Entity receiver, List<String> args, ActionInfo aInfo) {
         float yaw = Double.valueOf(args.get(0)).floatValue();
+        boolean keepVelocity = false;
+        if(args.size() > 1) keepVelocity = Boolean.parseBoolean(args.get(1));
 
+        Vector velocity = receiver.getVelocity();
         Location location = receiver.getLocation();
         location.setYaw(yaw);
         receiver.teleport(location);
+        if(keepVelocity) receiver.setVelocity(velocity);
     }
 
     @Override
@@ -30,6 +35,11 @@ public class SetYaw extends MixedCommand {
 
         ArgumentChecker ac = checkDouble(args.get(0), isFinalVerification, getTemplate());
         if (!ac.isValid()) return Optional.of(ac.getError());
+
+        if(args.size() > 1) {
+            ArgumentChecker ac2 = checkBoolean(args.get(1), isFinalVerification, getTemplate());
+            if (!ac2.isValid()) return Optional.of(ac2.getError());
+        }
 
         return Optional.empty();
     }
@@ -43,7 +53,7 @@ public class SetYaw extends MixedCommand {
 
     @Override
     public String getTemplate() {
-        return "SETYAW {yaw_number}";
+        return "SETYAW {yaw_number} [keepVelocity]";
     }
 
     @Override

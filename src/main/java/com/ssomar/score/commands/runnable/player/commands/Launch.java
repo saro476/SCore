@@ -34,7 +34,6 @@ public class Launch extends PlayerCommand {
     @Override
     public void run(Player p, Player receiver, List<String> args, ActionInfo aInfo) {
 
-        Runnable r = () -> {
             double rotationVertical = 0;
             double rotationHorizontal = 0;
 
@@ -69,7 +68,8 @@ public class Launch extends PlayerCommand {
 
                     if (entity instanceof Firework) {
                         entity.remove();
-                        entity = receiver.getWorld().spawnEntity(receiver.getEyeLocation(), EntityType.FIREWORK);
+                        EntityType fireworkType =  SCore.is1v20v5Plus() ? EntityType.FIREWORK_ROCKET : EntityType.valueOf("FIREWORK");
+                        entity = receiver.getWorld().spawnEntity(receiver.getEyeLocation(), fireworkType);
                         Firework firework = (Firework) entity;
                         firework.setShotAtAngle(true);
                     }
@@ -154,8 +154,6 @@ public class Launch extends PlayerCommand {
                     e.printStackTrace();
                 }
             }
-        };
-        SCore.schedulerHook.runTask(r, 0);
     }
 
 

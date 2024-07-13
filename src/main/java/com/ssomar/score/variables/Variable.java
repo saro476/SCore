@@ -2,8 +2,7 @@ package com.ssomar.score.variables;
 
 import com.ssomar.score.features.FeatureInterface;
 import com.ssomar.score.features.FeatureParentInterface;
-import com.ssomar.score.features.custom.activators.activator.NewSActivator;
-import com.ssomar.score.features.custom.activators.group.ActivatorsFeature;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.types.ColoredStringFeature;
 import com.ssomar.score.features.types.MaterialFeature;
 import com.ssomar.score.features.types.VariableForFeature;
@@ -11,7 +10,7 @@ import com.ssomar.score.features.types.VariableTypeFeature;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.projectiles.SProjectileEditor;
 import com.ssomar.score.projectiles.SProjectileEditorManager;
-import com.ssomar.score.sobject.NewSObject;
+import com.ssomar.score.sobject.SObjectWithFileEditable;
 import com.ssomar.score.sobject.menu.NewSObjectsManagerEditor;
 import com.ssomar.score.splugin.SPlugin;
 import com.ssomar.score.utils.emums.VariableType;
@@ -19,28 +18,18 @@ import com.ssomar.score.variables.loader.VariablesLoader;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 @Getter
 @Setter
-public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectileEditorManager> {
-
-    private String id;
-    private String path;
+public class Variable extends SObjectWithFileEditable<Variable, SProjectileEditor, SProjectileEditorManager> {
 
     private VariableTypeFeature type;
 
@@ -53,16 +42,12 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
     private MaterialFeature icon;
 
     public Variable(FeatureParentInterface parent, String id, String path) {
-        super(parent, "VAR", "VAR", new String[]{}, GUI.WRITABLE_BOOK);
-        this.id = id;
-        this.path = path;
+        super(id, parent, FeatureSettingsSCore.VARIABLE, path, VariablesLoader.getInstance());
         reset();
     }
 
     public Variable(String id, String path) {
-        super("VAR", "VAR", new String[]{}, GUI.WRITABLE_BOOK);
-        this.id = id;
-        this.path = path;
+        super(id, FeatureSettingsSCore.VARIABLE, path, VariablesLoader.getInstance());
         reset();
     }
 
@@ -100,7 +85,7 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
             //SsomarDev.testMsg("key: " + key, true);
             if (type.getValue().get().equals(VariableType.LIST) && !this.values.get(key).isEmpty()) {
                 config.set("values." + key, this.values.get(key));
-            } else if(!this.values.get(key).isEmpty())
+            } else if (!this.values.get(key).isEmpty())
                 config.set("values." + key, this.values.get(key).get(0));
         }
     }
@@ -121,16 +106,16 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
 
     @Override
     public void reset() {
-        defaultValue = new ColoredStringFeature(this, "default", Optional.empty(), "Default", new String[]{}, GUI.WRITABLE_BOOK, false, true);
-        type = new VariableTypeFeature(this, "type", Optional.of(VariableType.NUMBER), "Type", new String[]{}, GUI.COMPARATOR, false, false);
-        forFeature = new VariableForFeature(this, "for", Optional.empty(), "For", new String[]{}, GUI.COMPARATOR, false);
+        defaultValue = new ColoredStringFeature(this, Optional.empty(), FeatureSettingsSCore.default_string, true);
+        type = new VariableTypeFeature(this, Optional.of(VariableType.NUMBER), FeatureSettingsSCore.type, false);
+        forFeature = new VariableForFeature(this, Optional.empty(), FeatureSettingsSCore.for_);
         values = new HashMap<>();
-        icon = new MaterialFeature(this, "icon", Optional.of(Material.PAPER), "Icon", new String[]{}, Material.STONE, false);
+        icon = new MaterialFeature(this, Optional.of(Material.PAPER), FeatureSettingsSCore.icon);
     }
 
     @Override
     public Variable clone(FeatureParentInterface newParent) {
-        Variable clone = new Variable(this, id, path);
+        Variable clone = new Variable(this, getId(), getPath());
         clone.setType(type.clone(clone));
         clone.setForFeature(forFeature.clone(clone));
         clone.setDefaultValue(defaultValue.clone(clone));
@@ -151,29 +136,7 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
 
     @Override
     public String getParentInfo() {
-        return "Variable: " + id;
-    }
-
-    @Override
-    public ConfigurationSection getConfigurationSection() {
-        File file = getFile();
-
-        FileConfiguration config = (FileConfiguration) YamlConfiguration.loadConfiguration(file);
-        return config;
-    }
-
-    @Override
-    public File getFile() {
-        File file = new File(path);
-        if (!file.exists()) {
-            try {
-                new File(path).createNewFile();
-                file = VariablesLoader.getInstance().searchFileOfObject(id);
-            } catch (IOException ignored) {
-                return null;
-            }
-        }
-        return file;
+        return "Variable: " + getId();
     }
 
     @Override
@@ -199,39 +162,9 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
     }
 
 
-    @Override
-    public ActivatorsFeature getActivators() {
-        return null;
-    }
-
-    @Override
-    public Item dropItem(Location location, int amount) {
-        return null;
-    }
-
-    @Override
-    public ItemStack buildItem(int quantity, Optional<Player> creatorOpt) {
-        // Useless here
-        return new ItemStack(icon.getValue().get());
-    }
-
-    @Nullable
-    @Override
-    public NewSActivator getActivator(String actID) {
-        return null;
-    }
-
-    @Override
-    public List<String> getDescription() {
-        List<String> description = new ArrayList<>();
-        description.add("§7ID: §f" + id);
-        description.add("§7Path: §f" + path);
-        return description;
-    }
-
     public String getValuesStr() {
         StringBuilder sb = new StringBuilder();
-        if(defaultValue.getValue().isPresent()) {
+        if (defaultValue.getValue().isPresent()) {
             sb.append("&7Default value: &f\n");
             sb.append("&e").append(defaultValue.getValue().get()).append("\n");
         }
@@ -255,10 +188,9 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
                 List<String> playerValues;
                 if (values.containsKey(optPlayer.get().getUniqueId() + "") && (playerValues = values.get(optPlayer.get().getUniqueId() + "")).size() > indexOpt.orElse(0)) {
                     if (type.getValue().get().equals(VariableType.LIST)) {
-                        if(indexOpt.isPresent()) {
+                        if (indexOpt.isPresent()) {
                             return playerValues.get(indexOpt.get());
-                        }
-                        else return playerValues.toString();
+                        } else return playerValues.toString();
                     } else return playerValues.get(0);
                 }
             }
@@ -266,14 +198,13 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
             List<String> globalValues;
             if (values.containsKey("global") && (globalValues = values.get("global")).size() > indexOpt.orElse(0)) {
                 if (type.getValue().get().equals(VariableType.LIST)) {
-                    if(indexOpt.isPresent()) {
+                    if (indexOpt.isPresent()) {
                         return globalValues.get(indexOpt.get());
-                    }
-                    else return globalValues.toString();
+                    } else return globalValues.toString();
                 } else return globalValues.get(0);
             }
         }
-        if(defaultValue.getValue().isPresent()) return defaultValue.getValue().get();
+        if (defaultValue.getValue().isPresent()) return defaultValue.getValue().get();
         return "";
     }
 
@@ -283,10 +214,9 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
                 List<String> playerValues;
                 if (values.containsKey(optPlayer.get().getUniqueId() + "") && (playerValues = values.get(optPlayer.get().getUniqueId() + "")).size() > indexOpt.orElse(0)) {
                     if (type.getValue().get().equals(VariableType.LIST)) {
-                        if(indexOpt.isPresent()) {
+                        if (indexOpt.isPresent()) {
                             return playerValues.get(indexOpt.get()).length();
-                        }
-                        else return playerValues.size();
+                        } else return playerValues.size();
                     } else return playerValues.get(0).length();
                 }
             }
@@ -294,10 +224,9 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
             List<String> globalValues;
             if (values.containsKey("global") && (globalValues = values.get("global")).size() > indexOpt.orElse(0)) {
                 if (type.getValue().get().equals(VariableType.LIST)) {
-                    if(indexOpt.isPresent()) {
+                    if (indexOpt.isPresent()) {
                         return globalValues.get(indexOpt.get()).length();
-                    }
-                    else return globalValues.size();
+                    } else return globalValues.size();
                 } else return globalValues.get(0).length();
             }
         }
@@ -367,7 +296,7 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
             values.put("global", Arrays.asList(value));
         }
 
-        this.save();
+        this.save(false);
 
         return Optional.empty();
     }
@@ -394,7 +323,7 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
             return Optional.of("§cTo add something your variable must be a list");
         }
 
-        this.save();
+        this.save(false);
 
         return Optional.empty();
     }
@@ -406,7 +335,7 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
                 if (optPlayer.isPresent()) {
                     List<String> actualValues = values.get(optPlayer.get().getUniqueId() + "");
                     try {
-                        if(valueOpt.isPresent()) actualValues.remove(valueOpt.get());
+                        if (valueOpt.isPresent()) actualValues.remove(valueOpt.get());
                         else actualValues.remove((int) indexOpt.orElse(actualValues.size() - 1));
                     } catch (Exception ignored) {
                     }
@@ -417,7 +346,7 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
             } else {
                 List<String> actualValues = values.get("global");
                 try {
-                    if(valueOpt.isPresent()) actualValues.remove(valueOpt.get());
+                    if (valueOpt.isPresent()) actualValues.remove(valueOpt.get());
                     else actualValues.remove((int) indexOpt.orElse(actualValues.size() - 1));
                 } catch (Exception ignored) {
                 }
@@ -427,7 +356,7 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
             return Optional.of("§cTo remove something your variable must be a list");
         }
 
-        this.save();
+        this.save(false);
 
         return Optional.empty();
     }
@@ -444,8 +373,13 @@ public class Variable extends NewSObject<Variable, SProjectileEditor, SProjectil
             values.remove("global");
         }
 
-        this.save();
+        this.save(false);
 
         return Optional.empty();
+    }
+
+    @Override
+    public ItemStack getIconItem() {
+        return new ItemStack(icon.getValue().get());
     }
 }

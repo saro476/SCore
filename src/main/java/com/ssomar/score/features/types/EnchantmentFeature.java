@@ -2,20 +2,17 @@ package com.ssomar.score.features.types;
 
 import com.ssomar.score.SCore;
 import com.ssomar.score.editor.NewGUIManager;
-import com.ssomar.score.features.FeatureAbstract;
-import com.ssomar.score.features.FeatureParentInterface;
-import com.ssomar.score.features.FeatureRequireOnlyClicksInEditor;
-import com.ssomar.score.features.FeatureReturnCheckPremium;
+import com.ssomar.score.features.*;
+import com.ssomar.score.features.custom.enchantments.enchantment.EnchantmentWithLevelFeature;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.splugin.SPlugin;
+import com.ssomar.score.utils.item.UpdateItemInGUI;
 import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -29,8 +26,8 @@ public class EnchantmentFeature extends FeatureAbstract<Optional<Enchantment>, E
     private Optional<Enchantment> value;
     private Optional<Enchantment> defaultValue;
 
-    public EnchantmentFeature(FeatureParentInterface parent, String name, Optional<Enchantment> defaultValue, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public EnchantmentFeature(FeatureParentInterface parent, Optional<Enchantment> defaultValue, FeatureSettingsInterface featureSettings) {
+        super(parent, featureSettings);
         this.defaultValue = defaultValue;
         reset();
     }
@@ -102,12 +99,12 @@ public class EnchantmentFeature extends FeatureAbstract<Optional<Enchantment>, E
     public void updateItemParentEditor(GUI gui) {
         Optional<Enchantment> optional = getValue();
         if (optional.isPresent()) updateEnchantment(optional.get(), gui);
-        else updateEnchantment(Enchantment.DURABILITY, gui);
+        else updateEnchantment(EnchantmentWithLevelFeature.getDefaultEnchantment(), gui);
     }
 
     @Override
     public EnchantmentFeature clone(FeatureParentInterface newParent) {
-        EnchantmentFeature clone = new EnchantmentFeature(newParent, this.getName(), defaultValue, getEditorName(), getEditorDescription(), getEditorMaterial(), isRequirePremium());
+        EnchantmentFeature clone = new EnchantmentFeature(newParent,defaultValue, getFeatureSettings());
         clone.value = value;
         return clone;
     }
@@ -251,13 +248,8 @@ public class EnchantmentFeature extends FeatureAbstract<Optional<Enchantment>, E
         }
         meta.setLore(lore);
         item.setItemMeta(meta);
-        /* Update the gui only for the right click , for the left it updated automaticaly idk why */
-        for (HumanEntity e : gui.getInv().getViewers()) {
-            if (e instanceof Player) {
-                Player p = (Player) e;
-                p.updateInventory();
-            }
-        }
+        /* Bug item no update idk why */
+        UpdateItemInGUI.updateItemInGUI(gui, getEditorName(), meta.getDisplayName(), lore, item.getType());
     }
 
     public Enchantment getEnchantment(GUI gui) {
@@ -282,8 +274,9 @@ public class EnchantmentFeature extends FeatureAbstract<Optional<Enchantment>, E
     }
 
     public String getEnchantmentName(Enchantment enchantment) {
+        String name = "";
         if (!SCore.is1v12Less()) {
-            String name = enchantment.getKey().toString();
+            name = enchantment.getKey().toString();
             //SsomarDev.testMsg("Enchantment name : " + name, true);
             if (name.contains("minecraft:")) {
                 name = name.split("minecraft:")[1];
@@ -291,10 +284,10 @@ public class EnchantmentFeature extends FeatureAbstract<Optional<Enchantment>, E
             else{
                 name = name.split(":")[0].toUpperCase()+">>"+enchantment.getName();
             }
-            return name;
         } else {
-            return enchantment.getName();
+            name = enchantment.getName();
         }
+        return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
     public Optional<Enchantment> getEnchantment(String enchantmentName) {

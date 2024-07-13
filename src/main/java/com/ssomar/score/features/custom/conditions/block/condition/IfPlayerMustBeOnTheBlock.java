@@ -1,29 +1,29 @@
 package com.ssomar.score.features.custom.conditions.block.condition;
 
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.custom.conditions.block.BlockConditionFeature;
 import com.ssomar.score.features.custom.conditions.block.BlockConditionRequest;
 import com.ssomar.score.features.types.BooleanFeature;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 public class IfPlayerMustBeOnTheBlock extends BlockConditionFeature<BooleanFeature, IfPlayerMustBeOnTheBlock> {
 
     public IfPlayerMustBeOnTheBlock(FeatureParentInterface parent) {
-        super(parent, "ifPlayerMustBeOnTheBlock", "If player must be on the block", new String[]{}, Material.ANVIL, false);
+        super(parent,  FeatureSettingsSCore.ifPlayerMustBeOnTheBlock);
     }
 
     @Override
     public boolean hasCondition() {
-        return getCondition().getValue();
+        return getCondition().isConfigured();
     }
 
     @Override
     public boolean verifCondition(BlockConditionRequest request) {
-        if (hasCondition()) {
+        if (getCondition().getValue(request.getSp())) {
             Block b = request.getBlock();
             boolean onBlock = false;
             Location bLoc = b.getLocation();
@@ -50,9 +50,10 @@ public class IfPlayerMustBeOnTheBlock extends BlockConditionFeature<BooleanFeatu
         return this;
     }
 
+
     @Override
     public void subReset() {
-        setCondition(new BooleanFeature(getParent(), "ifPlayerMustBeOnTheBlock", false, "If player must be on the block", new String[]{}, Material.ANVIL, false, true));
+        setCondition(new BooleanFeature(getParent(), false, FeatureSettingsSCore.ifPlayerMustBeOnTheBlock, true));
     }
 
     @Override

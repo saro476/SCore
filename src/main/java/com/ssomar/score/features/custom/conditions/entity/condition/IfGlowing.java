@@ -1,10 +1,10 @@
 package com.ssomar.score.features.custom.conditions.entity.condition;
 
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionFeature;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionRequest;
 import com.ssomar.score.features.types.BooleanFeature;
-import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffectType;
@@ -12,12 +12,12 @@ import org.bukkit.potion.PotionEffectType;
 public class IfGlowing extends EntityConditionFeature<BooleanFeature, IfGlowing> {
 
     public IfGlowing(FeatureParentInterface parent) {
-        super(parent, "ifGlowing", "If glowing", new String[]{}, Material.ANVIL, false);
+        super(parent, FeatureSettingsSCore.ifGlowing);
     }
 
     @Override
     public boolean verifCondition(EntityConditionRequest request) {
-        if (hasCondition()) {
+        if (getCondition().getValue(request.getSp())) {
             Entity entity = request.getEntity();
             boolean hasError = !entity.isGlowing();
             LivingEntity lE = (LivingEntity) entity;
@@ -40,12 +40,12 @@ public class IfGlowing extends EntityConditionFeature<BooleanFeature, IfGlowing>
 
     @Override
     public void subReset() {
-        setCondition(new BooleanFeature(getParent(), "ifGlowing", false, "If glowing", new String[]{}, Material.ANVIL, false, true));
+        setCondition(new BooleanFeature(getParent(),  false, FeatureSettingsSCore.ifGlowing, true));
     }
 
     @Override
     public boolean hasCondition() {
-        return getCondition().getValue();
+        return getCondition().isConfigured();
     }
 
     @Override

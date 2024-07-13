@@ -2,22 +2,22 @@ package com.ssomar.score.features.custom.conditions.entity.condition;
 
 import com.ssomar.score.SCore;
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionFeature;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionRequest;
 import com.ssomar.score.features.types.BooleanFeature;
-import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 
 public class IfFrozen extends EntityConditionFeature<BooleanFeature, IfFrozen> {
 
     public IfFrozen(FeatureParentInterface parent) {
-        super(parent, "ifFrozen", "If frozen", new String[]{}, Material.ANVIL, false);
+        super(parent, FeatureSettingsSCore.ifFrozen);
     }
 
     @Override
     public boolean verifCondition(EntityConditionRequest request) {
         Entity entity = request.getEntity();
-        if (hasCondition() && SCore.is1v18Plus() && !entity.isFrozen()) {
+        if (getCondition().getValue(request.getSp()) && SCore.is1v18Plus() && !entity.isFrozen()) {
             runInvalidCondition(request);
             return false;
         }
@@ -32,12 +32,12 @@ public class IfFrozen extends EntityConditionFeature<BooleanFeature, IfFrozen> {
 
     @Override
     public void subReset() {
-        setCondition(new BooleanFeature(getParent(), "ifFrozen", false, "If frozen", new String[]{}, Material.ANVIL, false, true));
+        setCondition(new BooleanFeature(getParent(), false, FeatureSettingsSCore.ifFrozen, true));
     }
 
     @Override
     public boolean hasCondition() {
-        return getCondition().getValue();
+        return getCondition().isConfigured();
     }
 
     @Override

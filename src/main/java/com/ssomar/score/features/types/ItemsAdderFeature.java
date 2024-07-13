@@ -7,8 +7,10 @@ import com.ssomar.score.editor.NewGUIManager;
 import com.ssomar.score.features.FeatureAbstract;
 import com.ssomar.score.features.FeatureParentInterface;
 import com.ssomar.score.features.FeatureRequireOnlyClicksInEditor;
+import com.ssomar.score.features.FeatureSettingsInterface;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.splugin.SPlugin;
+import com.ssomar.score.utils.item.UpdateItemInGUI;
 import com.ssomar.score.utils.strings.StringConverter;
 import dev.lone.itemsadder.api.CustomBlock;
 import dev.lone.itemsadder.api.CustomFurniture;
@@ -17,10 +19,8 @@ import dev.lone.itemsadder.api.ItemsAdder;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
@@ -37,8 +37,8 @@ public class ItemsAdderFeature extends FeatureAbstract<Optional<String>, ItemsAd
     private static final boolean DEBUG = false;
     private Optional<String> value;
 
-    public ItemsAdderFeature(FeatureParentInterface parent, String name, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public ItemsAdderFeature(FeatureParentInterface parent, FeatureSettingsInterface featureSettings) {
+        super(parent, featureSettings);
         this.value = Optional.empty();
     }
 
@@ -76,7 +76,7 @@ public class ItemsAdderFeature extends FeatureAbstract<Optional<String>, ItemsAd
         return Optional.empty();
     }
 
-    public boolean placeItemAdder(Location location, ItemStack itemStack) {
+    public Object placeItemAdder(Location location, ItemStack itemStack) {
         if (getValue().isPresent()) {
             String id = getValue().get();
             try {
@@ -84,7 +84,7 @@ public class ItemsAdderFeature extends FeatureAbstract<Optional<String>, ItemsAd
                 if (customBlock != null) {
                     SsomarDev.testMsg("placeItemsAdder Block: " + id, DEBUG);
                     customBlock.place(location);
-                    return true;
+                    return customBlock;
                 }
             } catch (Exception e) {
                 try {
@@ -98,13 +98,13 @@ public class ItemsAdderFeature extends FeatureAbstract<Optional<String>, ItemsAd
                         }
                     };
                     runnable3.runTaskLater(ExecutableBlocks.plugin, 10);
-                    return true;
+                    return customFurniture;
                 } catch (Exception e1) {
                     e.printStackTrace();
                 }
             }
         }
-        return false;
+        return null;
     }
 
 
@@ -136,7 +136,7 @@ public class ItemsAdderFeature extends FeatureAbstract<Optional<String>, ItemsAd
 
     @Override
     public ItemsAdderFeature clone(FeatureParentInterface newParent) {
-        ItemsAdderFeature clone = new ItemsAdderFeature(newParent, this.getName(), getEditorName(), getEditorDescription(), getEditorMaterial(), requirePremium());
+        ItemsAdderFeature clone = new ItemsAdderFeature(newParent, getFeatureSettings());
         clone.value = value;
         return clone;
     }
@@ -295,13 +295,8 @@ public class ItemsAdderFeature extends FeatureAbstract<Optional<String>, ItemsAd
         }
         meta.setLore(lore);
         item.setItemMeta(meta);
-        /* Update the gui only for the right click , for the left it updated automaticaly idk why */
-        for (HumanEntity e : gui.getInv().getViewers()) {
-            if (e instanceof Player) {
-                Player p = (Player) e;
-                p.updateInventory();
-            }
-        }
+        /* Bug item no update idk why */
+        UpdateItemInGUI.updateItemInGUI(gui, getEditorName(), meta.getDisplayName(), lore, item.getType());
     }
 
     public Optional<String> getItemAdder(GUI gui) {

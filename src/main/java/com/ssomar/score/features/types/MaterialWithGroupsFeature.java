@@ -4,15 +4,15 @@ import com.ssomar.score.editor.NewGUIManager;
 import com.ssomar.score.features.FeatureAbstract;
 import com.ssomar.score.features.FeatureParentInterface;
 import com.ssomar.score.features.FeatureRequireOnlyClicksInEditor;
+import com.ssomar.score.features.FeatureSettingsInterface;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.splugin.SPlugin;
 import com.ssomar.score.utils.emums.MaterialWithGroups;
+import com.ssomar.score.utils.item.UpdateItemInGUI;
 import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -31,8 +31,8 @@ public class MaterialWithGroupsFeature extends FeatureAbstract<Optional<String>,
     private boolean acceptItems;
     private boolean acceptBlocks;
 
-    public MaterialWithGroupsFeature(FeatureParentInterface parent, String name, Optional<String> defaultValue, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium, boolean acceptAir, boolean acceptItems, boolean acceptBlocks) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public MaterialWithGroupsFeature(FeatureParentInterface parent, Optional<String> defaultValue, FeatureSettingsInterface featureSettings, boolean acceptAir, boolean acceptItems, boolean acceptBlocks) {
+        super(parent, featureSettings);
         this.defaultValue = defaultValue;
         this.value = Optional.empty();
         this.acceptAir = acceptAir;
@@ -47,7 +47,7 @@ public class MaterialWithGroupsFeature extends FeatureAbstract<Optional<String>,
         value = MaterialWithGroups.getMaterialWithGroups(colorStr);
         if (!value.isPresent()) {
             errors.add("&cERROR, Couldn't load the Material with groups value of " + this.getName() + " from config, value: " + colorStr + " &7&o" + getParent().getParentInfo() + " &6>> Materials with groups available: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Material.html");
-        } else if (requirePremium() && !isPremiumLoading) {
+        } else if (this.isRequirePremium() && !isPremiumLoading) {
             errors.add("&cERROR, Couldn't load the Material with groups value of " + this.getName() + " from config, value: " + value + " &7&o" + getParent().getParentInfo() + " &6>> Because it's a premium feature !");
             value = Optional.empty();
         }
@@ -88,7 +88,7 @@ public class MaterialWithGroupsFeature extends FeatureAbstract<Optional<String>,
 
     @Override
     public MaterialWithGroupsFeature clone(FeatureParentInterface newParent) {
-        MaterialWithGroupsFeature clone = new MaterialWithGroupsFeature(newParent, this.getName(), getDefaultValue(), getEditorName(), getEditorDescription(), getEditorMaterial(), requirePremium(), isAcceptAir(), isAcceptItems(), isAcceptBlocks());
+        MaterialWithGroupsFeature clone = new MaterialWithGroupsFeature(newParent, getDefaultValue(), getFeatureSettings(), isAcceptAir(), isAcceptItems(), isAcceptBlocks());
         clone.value = value;
         return clone;
     }
@@ -229,13 +229,8 @@ public class MaterialWithGroupsFeature extends FeatureAbstract<Optional<String>,
         }
         meta.setLore(lore);
         item.setItemMeta(meta);
-        /* Update the gui only for the right click , for the left it updated automaticaly idk why */
-        for (HumanEntity e : gui.getInv().getViewers()) {
-            if (e instanceof Player) {
-                Player p = (Player) e;
-                p.updateInventory();
-            }
-        }
+        /* Bug item no update idk why */
+        UpdateItemInGUI.updateItemInGUI(gui, getEditorName(), meta.getDisplayName(), lore, item.getType());
     }
 
     public String getMaterialWithGroups(GUI gui) {

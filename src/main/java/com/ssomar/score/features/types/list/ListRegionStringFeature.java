@@ -2,18 +2,15 @@ package com.ssomar.score.features.types.list;
 
 import com.ssomar.score.editor.NewGUIManager;
 import com.ssomar.score.editor.Suggestion;
-import com.ssomar.score.features.FeatureAbstract;
-import com.ssomar.score.features.FeatureParentInterface;
-import com.ssomar.score.features.FeatureRequireSubTextEditorInEditor;
-import com.ssomar.score.features.FeatureReturnCheckPremium;
+import com.ssomar.score.features.*;
 import com.ssomar.score.menu.EditorCreator;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.splugin.SPlugin;
+import com.ssomar.score.utils.placeholders.StringPlaceholder;
 import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
@@ -30,8 +27,8 @@ public class ListRegionStringFeature extends FeatureAbstract<List<String>, ListR
     private List<String> defaultValue;
     private boolean notSaveIfEqualsToDefaultValue;
 
-    public ListRegionStringFeature(FeatureParentInterface parent, String name, List<String> defaultValue, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium, boolean notSaveIfEqualsToDefaultValue) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public ListRegionStringFeature(FeatureParentInterface parent, List<String> defaultValue, FeatureSettingsInterface featureSettings, boolean notSaveIfEqualsToDefaultValue) {
+        super(parent, featureSettings);
         this.defaultValue = defaultValue;
         this.notSaveIfEqualsToDefaultValue = notSaveIfEqualsToDefaultValue;
         reset();
@@ -82,7 +79,7 @@ public class ListRegionStringFeature extends FeatureAbstract<List<String>, ListR
 
     @Override
     public ListRegionStringFeature clone(FeatureParentInterface newParent) {
-        ListRegionStringFeature clone = new ListRegionStringFeature(newParent, this.getName(), getDefaultValue(), getEditorName(), getEditorDescription(), getEditorMaterial(), isRequirePremium(), isNotSaveIfEqualsToDefaultValue());
+        ListRegionStringFeature clone = new ListRegionStringFeature(newParent, getDefaultValue(), getFeatureSettings(), isNotSaveIfEqualsToDefaultValue());
         clone.setValue(getValues());
         return clone;
     }
@@ -140,5 +137,13 @@ public class ListRegionStringFeature extends FeatureAbstract<List<String>, ListR
         EditorCreator editor = new EditorCreator(beforeMenu, (List<String>) manager.currentWriting.get(playerEditor), getEditorName() + ":", true, true, true, true,
                 true, true, false, "", suggestions);
         editor.generateTheMenuAndSendIt(playerEditor);
+    }
+
+    public List<String> getValue(StringPlaceholder sp){
+        List<String> result = new ArrayList<>();
+        for(String s : this.getValues()) {
+            result.add(sp.replacePlaceholder(s));
+        }
+        return result;
     }
 }

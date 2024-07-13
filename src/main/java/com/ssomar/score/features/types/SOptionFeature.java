@@ -1,18 +1,19 @@
 package com.ssomar.score.features.types;
 
+import com.ssomar.score.SsomarDev;
 import com.ssomar.score.editor.NewGUIManager;
 import com.ssomar.score.features.FeatureAbstract;
 import com.ssomar.score.features.FeatureParentInterface;
 import com.ssomar.score.features.FeatureRequireOnlyClicksInEditor;
+import com.ssomar.score.features.FeatureSettingsInterface;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.sobject.sactivator.SOption;
 import com.ssomar.score.splugin.SPlugin;
+import com.ssomar.score.utils.item.UpdateItemInGUI;
 import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -30,8 +31,8 @@ public class SOptionFeature extends FeatureAbstract<SOption, SOptionFeature> imp
     private SPlugin plugin;
     private SOption builderInstance;
 
-    public SOptionFeature(SPlugin sPlugin, SOption builderInstance, FeatureParentInterface parent, String name, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public SOptionFeature(SPlugin sPlugin, SOption builderInstance, FeatureParentInterface parent, FeatureSettingsInterface featureSettings) {
+        super(parent, featureSettings);
         this.plugin = sPlugin;
         this.builderInstance = builderInstance;
         reset();
@@ -88,7 +89,7 @@ public class SOptionFeature extends FeatureAbstract<SOption, SOptionFeature> imp
 
     @Override
     public SOptionFeature clone(FeatureParentInterface newParent) {
-        SOptionFeature clone = new SOptionFeature(plugin, builderInstance, newParent, this.getName(), getEditorName(), getEditorDescription(), getEditorMaterial(), requirePremium());
+        SOptionFeature clone = new SOptionFeature(plugin, builderInstance, newParent, getFeatureSettings());
         clone.setValue(value);
         return clone;
     }
@@ -206,7 +207,8 @@ public class SOptionFeature extends FeatureAbstract<SOption, SOptionFeature> imp
     }
 
     public void updateOption(SOption option, GUI gui, boolean isPremiumLoading, boolean next) {
-        while (!isPremiumLoading && option.getPremiumOption().contains(option)) {
+       SsomarDev.testMsg("updateOption  "+ option+" >>"+builderInstance.getPremiumOption().contains(option), true);
+        while (!isPremiumLoading && builderInstance.getPremiumOption().contains(option)) {
             if (next) option = nextOption(option);
             else option = prevOption(option);
         }
@@ -221,7 +223,7 @@ public class SOptionFeature extends FeatureAbstract<SOption, SOptionFeature> imp
                 find = true;
             } else if (find) {
                 if (lore.size() == 17) break;
-                if (!isPremiumLoading && option.getPremiumOption().contains(check))
+                if (!isPremiumLoading && builderInstance.getPremiumOption().contains(check))
                     lore.add(StringConverter.coloredString("&6✦ &e" + check + " &7Premium"));
                 else
                     lore.add(StringConverter.coloredString("&6✦ &e" + check));
@@ -230,7 +232,7 @@ public class SOptionFeature extends FeatureAbstract<SOption, SOptionFeature> imp
         for (SOption check : getSortOptions()) {
             if (lore.size() == 17) break;
             else {
-                if (!isPremiumLoading && option.getPremiumOption().contains(check))
+                if (!isPremiumLoading && builderInstance.getPremiumOption().contains(check))
                     lore.add(StringConverter.coloredString("&6✦ &e" + check + " &7Premium"));
                 else
                     lore.add(StringConverter.coloredString("&6✦ &e" + check));
@@ -238,13 +240,8 @@ public class SOptionFeature extends FeatureAbstract<SOption, SOptionFeature> imp
         }
         meta.setLore(lore);
         item.setItemMeta(meta);
-        /* Update the gui only for the right click , for the left it updated automaticaly idk why */
-        for (HumanEntity e : gui.getInv().getViewers()) {
-            if (e instanceof Player) {
-                Player p = (Player) e;
-                p.updateInventory();
-            }
-        }
+        /* Bug item no update idk why */
+        UpdateItemInGUI.updateItemInGUI(gui, getEditorName(), meta.getDisplayName(), lore, item.getType());
     }
 
     public SOption getOption(GUI gui) {

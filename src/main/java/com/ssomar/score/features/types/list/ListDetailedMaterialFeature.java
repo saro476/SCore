@@ -10,15 +10,19 @@ import com.ssomar.score.api.executableitems.ExecutableItemsAPI;
 import com.ssomar.score.editor.NewGUIManager;
 import com.ssomar.score.editor.Suggestion;
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsInterface;
 import com.ssomar.score.menu.EditorCreator;
+import com.ssomar.score.usedapi.Dependency;
 import com.ssomar.score.usedapi.ItemsAdderAPI;
 import com.ssomar.score.utils.emums.MaterialWithGroups;
 import com.ssomar.score.utils.strings.StringConverter;
+import com.ssomar.score.utils.tags.MinecraftTags;
 import de.tr7zw.nbtapi.NBTItem;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -36,14 +40,18 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
     private static final String symbolEnd = "}";
     private static final String symbolEquals = ":";
     private static final String symbolSeparator = "\\+";
-    private static final Boolean DEBUG = false;
+    private static final Boolean DEBUG = true;
+
+    private static final String symbolStartMaterialTag = "#"; // #minecraft:mineable/pickaxe
     private List<String> listOfCustomBlocksPluginSupported;
 
     /* If it checks blocks tags or not, if not it checks item tags */
     private boolean forBlocks;
 
-    public ListDetailedMaterialFeature(FeatureParentInterface parent, String name, List<String> defaultValue, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium, boolean notSaveIfEqualsToDefaultValue, boolean forBlocks) {
-        super(parent, name, "List of Materials", editorName, editorDescription, editorMaterial, defaultValue, requirePremium, notSaveIfEqualsToDefaultValue);
+    private boolean specificationOfAtLeastOneState;
+
+    public ListDetailedMaterialFeature(FeatureParentInterface parent, List<String> defaultValue, FeatureSettingsInterface featureSettings, boolean notSaveIfEqualsToDefaultValue, boolean forBlocks) {
+        super(parent,"List of Materials",  defaultValue, featureSettings, notSaveIfEqualsToDefaultValue);
         this.listOfCustomBlocksPluginSupported = new ArrayList<>();
         if (SCore.hasItemsAdder) listOfCustomBlocksPluginSupported.add("ITEMSADDER");
         if (SCore.hasExecutableItems) listOfCustomBlocksPluginSupported.add("EXECUTABLEITEMS");
@@ -53,16 +61,29 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
         reset();
     }
 
+    public ListDetailedMaterialFeature(boolean forBlocks) {
+        super();
+        this.listOfCustomBlocksPluginSupported = new ArrayList<>();
+        if (SCore.hasItemsAdder) listOfCustomBlocksPluginSupported.add("ITEMSADDER");
+        if (SCore.hasExecutableItems) listOfCustomBlocksPluginSupported.add("EXECUTABLEITEMS");
+        if (Dependency.EXECUTABLE_BLOCKS.isInstalled()) listOfCustomBlocksPluginSupported.add("EXECUTABLEBLOCKS");
+        //if(SCore.hasOraxen) listOfCustomBlocksPluginSupported.add("ORAXEN");
+        this.forBlocks = forBlocks;
+        reset();
+    }
+
     @Override
     public List<String> loadValues(List<String> entries, List<String> errors) {
         List<String> values = new ArrayList<>();
+        //DONT ADD BECAUSE IT RESET IT AT THE SECOND TIME WHEN THE LOADING OF BLACKLIST specificationOfAtLeastOneState = false;
         for (String s : entries) {
-            s = StringConverter.decoloredString(s.toUpperCase());
+            s = StringConverter.decoloredString(s);
             String materialStr = s;
 
             boolean isCustomBlock = false;
             for (String customPlugin : listOfCustomBlocksPluginSupported) {
                 if (materialStr.startsWith(customPlugin)) {
+                    //SsomarDev.testMsg(">> loadValues: " + s, DEBUG);
                     values.add(s);
                     isCustomBlock = true;
                     break;
@@ -70,21 +91,37 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
             }
             if (isCustomBlock) continue;
 
+            // Uppercase only for material & tags
+            materialStr = materialStr.toUpperCase();
+
+            boolean isMaterialTag = false;
+            if (s.startsWith(symbolStartMaterialTag)) {
+                isMaterialTag = true;
+                values.add(s);
+            }
+            if(isMaterialTag) continue;
+
             if (s.contains(symbolStart)) {
+                specificationOfAtLeastOneState = true;
                 materialStr = s.split("\\" + symbolStart)[0];
 
                 String datas = s.split("\\" + symbolStart)[1].replace(symbolEnd, "");
                 for (String data : datas.split(symbolSeparator)) {
                     String[] dataSplit = data.split(symbolEquals);
                     if (dataSplit.length != 2) {
-                        errors.add("&cERROR, Couldn't load the The tags value of " + this.getName() + " from config, value: " + s + " &7&o" + getParent().getParentInfo() + " &6>> Example : FURNACE{lit:true}  BEETROOTS{age:3}, List of tags: https://minecraft.fandom.com/wiki/Block_states");
+                        String parentInfo = "";
+                        if(getParent() != null) parentInfo = getParent().getParentInfo();
+
+                        errors.add("&cERROR, Couldn't load the The tags value of " + this.getName() + " from config, value: " + s + " &7&o" + parentInfo + " &6>> Example : FURNACE{lit:true}  BEETROOTS{age:3}, List of tags: https://minecraft.fandom.com/wiki/Block_states");
                         continue;
                     }
                 }
             }
 
             if (!MaterialWithGroups.getMaterialWithGroups(materialStr.toUpperCase()).isPresent()) {
-                errors.add("&cERROR, Couldn't load the Material + GROUPS value of " + this.getName() + " from config, value: " + s + " &7&o" + getParent().getParentInfo() + " &6>> Check the wiki if you want the list of materials and groups");
+                String parentInfo = "";
+                if(getParent() != null) parentInfo = getParent().getParentInfo();
+                errors.add("&cERROR, Couldn't load the Material + GROUPS value of " + this.getName() + " from config, value: " + s + " &7&o" + parentInfo + " &6>> Check the wiki if you want the list of materials and groups");
                 continue;
             }
             values.add(s);
@@ -104,8 +141,19 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
     public Map<String, List<Map<String, String>>> extractConditions(List<String> values) {
         Map<String, List<Map<String, String>>> conditions = new HashMap<>();
         for (String s : values) {
-            SsomarDev.testMsg(">> extractConditions: " + s, DEBUG);
+            //SsomarDev.testMsg(">> extractConditions: " + s, DEBUG);
             String materialStr = s;
+
+            boolean isCustomBlock = false;
+            for (String customPlugin : listOfCustomBlocksPluginSupported) {
+                if (materialStr.startsWith(customPlugin)) {
+                    isCustomBlock = true;
+                    break;
+                }
+            }
+            if (isCustomBlock) continue;
+
+
             Map<String, String> tags = new HashMap<>();
 
             if (s.contains(symbolStart)) {
@@ -172,13 +220,17 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
                     String[] spliter2 = spliter1[0].split(symbolStartSplit);
 
                     // Otherwise that means states are empty
-                    if (spliter2.length == 2) {
+                    if (spliter2.length >= 2) {
                         SsomarDev.testMsg(">> spliter2: " + spliter2[1], DEBUG);
 
                         String[] spliterStates = spliter2[1].split(symbolSeparator);
 
                         for (String state : spliterStates) {
                             String[] spliterState = state.split(symbolEquals);
+                            if(spliterState.length < 2) {
+                                SsomarDev.testMsg(">> spliterState.length: " + spliterState.length, DEBUG);
+                                continue;
+                            }
                             SsomarDev.testMsg(">> spliterState: " + spliterState[0] + "=" + spliterState[1], DEBUG);
                             states.put(spliterState[0].toUpperCase(), spliterState[1].toUpperCase());
                         }
@@ -190,7 +242,16 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
         }
 
         for (String mat : conditions.keySet()) {
-            if (MaterialWithGroups.verif(material, mat)) {
+
+            // Verif custom material tag
+            if(!SCore.is1v11Less() && mat.startsWith(symbolStartMaterialTag)) {
+               mat = mat.substring(1).toLowerCase();
+                Tag<Material> tag = MinecraftTags.getInstance().getTag(mat);
+                if(tag != null) {
+                    if(MinecraftTags.getInstance().checkIfTagged(material, tag)) return true;
+                }
+            }
+            else if (MaterialWithGroups.verif(material, mat)) {
                 SsomarDev.testMsg(">> verif mat: " + mat, DEBUG);
                 List<Map<String, String>> tagsList = conditions.get(mat);
                 SsomarDev.testMsg(">> verif tagsList empty ?: " + tagsList.isEmpty(), DEBUG);
@@ -200,9 +261,11 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
                     if (tags.isEmpty()) return true;
                     else {
                         for (String key : tags.keySet()) {
-                            key = key.toUpperCase();
-                            if (states.containsKey(key)) {
+                            SsomarDev.testMsg(">> verif key: " + key, DEBUG);
+                            String keyUpper = key.toUpperCase();
+                            if (states.containsKey(keyUpper)) {
                                 if (!states.get(key).equalsIgnoreCase(tags.get(key))) {
+                                    SsomarDev.testMsg(">> verif states.get(key): " + states.get(key)+ " != tags.get(key): " + tags.get(key), DEBUG);
                                     invalid = true;
                                     break;
                                 }
@@ -220,7 +283,6 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
         }
         return false;
     }
-
 
     /* Plugin name - list of ID */
     public Map<String, List<String>> extractCustomBlocksConditions(List<String> values) {
@@ -286,12 +348,14 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
     }
 
     public boolean verifBlock(@NotNull Block block) {
-        return verifBlock(block, null, null);
+        return verifBlock(block, null, Optional.empty());
     }
 
-    public boolean verifBlock(@NotNull Block block, @Nullable Material material, @Nullable Optional<String> statesStrOpt) {
+    public boolean verifBlock(@NotNull Block block, @Nullable Material material, @NotNull Optional<String> statesStrOpt) {
         if (material == null) material = block.getType();
-        if (statesStrOpt == null) {
+        // To only run if there is a state to check
+        SsomarDev.testMsg(">> verif specificationOfAtLeastOneState: " + specificationOfAtLeastOneState, DEBUG);
+        if (specificationOfAtLeastOneState && !statesStrOpt.isPresent()) {
             if (!SCore.is1v12Less()) statesStrOpt = Optional.of(block.getBlockData().getAsString(true));
             else statesStrOpt = Optional.empty();
         }
@@ -352,6 +416,8 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
                         if (customOpt.getConfig().getId().equalsIgnoreCase(id)) return true;
                     }
 
+
+
                 }
             }
         }
@@ -386,7 +452,7 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
 
     @Override
     public ListDetailedMaterialFeature clone(FeatureParentInterface newParent) {
-        ListDetailedMaterialFeature clone = new ListDetailedMaterialFeature(newParent, this.getName(), getDefaultValue(), getEditorName(), getEditorDescription(), getEditorMaterial(), isRequirePremium(), isNotSaveIfEqualsToDefaultValue(), isForBlocks());
+        ListDetailedMaterialFeature clone = new ListDetailedMaterialFeature(newParent, getDefaultValue(),getFeatureSettings(), isNotSaveIfEqualsToDefaultValue(), isForBlocks());
         clone.setValues(getValues());
         clone.setBlacklistedValues(getBlacklistedValues());
         return clone;
@@ -405,6 +471,12 @@ public class ListDetailedMaterialFeature extends ListFeatureAbstract<String, Lis
             }
         }
         if (isCustomBlock) return Optional.empty();
+
+        boolean isMaterialTag = false;
+        if (s.startsWith(symbolStartMaterialTag)) {
+            isMaterialTag = true;
+        }
+        if(isMaterialTag) return Optional.empty();
 
         if (s.contains(symbolStart)) {
             str = s.split("\\" + symbolStart)[0];

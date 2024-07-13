@@ -49,9 +49,11 @@ public class MixedCommandsManager extends CommandManager<SCommand> {
         commands.add(new Invulnerability());
         commands.add(new Jump());
         commands.add(new LaunchEntity());
+        commands.add(new MLibDamage());
         commands.add(new MobNearest());
         commands.add(new Nearest());
         commands.add(new OpMessage());
+        commands.add(new RegainHealth());
         commands.add(new RemoveBurn());
         commands.add(new RemoveGlow());
         commands.add(new SetGlow());
@@ -63,6 +65,8 @@ public class MixedCommandsManager extends CommandManager<SCommand> {
         commands.add(new StunDisable());
         commands.add(new StunEnable());
         commands.add(new TeleportOnCursor());
+        commands.add(new TranferItem());
+        commands.add(new Teleport());
         commands.add(new UnsafeTeleportOnCursor());
         commands.add(new WorldTeleport());
 
@@ -72,6 +76,28 @@ public class MixedCommandsManager extends CommandManager<SCommand> {
         }
 
         setCommands(commands);
+    }
+
+    public List<SCommand> getDisplayCommands(){
+        List<SCommand> commands = new ArrayList<>();
+        for (SCommand cmd : this.getCommands()) {
+            if (cmd instanceof AllMobs ||
+                    cmd instanceof AllPlayers ||
+                    cmd instanceof Burn ||
+                    cmd instanceof ConsoleMessage ||
+                    cmd instanceof Glowing ||
+                    cmd instanceof MobNearest ||
+                    cmd instanceof Nearest ||
+                    cmd instanceof OpMessage ||
+                    cmd instanceof RemoveBurn ||
+                    cmd instanceof RemoveGlow ||
+                    cmd instanceof SetGlow ||
+                    cmd instanceof Spin ||
+                    cmd instanceof StrikeLightning) {
+                commands.add(cmd);
+            }
+        }
+        return commands;
     }
 
     public static MixedCommandsManager getInstance() {

@@ -1,22 +1,22 @@
 package com.ssomar.score.features.custom.conditions.player.condition;
 
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.custom.conditions.player.PlayerConditionFeature;
 import com.ssomar.score.features.custom.conditions.player.PlayerConditionRequest;
 import com.ssomar.score.features.types.BooleanFeature;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 public class IfGliding extends PlayerConditionFeature<BooleanFeature, IfGliding> {
 
     public IfGliding(FeatureParentInterface parent) {
-        super(parent, "ifGliding", "If gliding", new String[]{}, Material.ANVIL, false);
+        super(parent, FeatureSettingsSCore.ifGliding);
     }
 
     @Override
     public boolean verifCondition(PlayerConditionRequest request) {
         Player player = request.getPlayer();
-        if (hasCondition() && !player.isGliding()) {
+        if (getCondition().getValue(request.getSp()) && !player.isGliding()) {
             runInvalidCondition(request);
             return false;
         }
@@ -30,12 +30,12 @@ public class IfGliding extends PlayerConditionFeature<BooleanFeature, IfGliding>
 
     @Override
     public void subReset() {
-        setCondition(new BooleanFeature(getParent(), "ifGliding", false, "If gliding", new String[]{}, Material.LEVER, false, true));
+        setCondition(new BooleanFeature(getParent(), false, FeatureSettingsSCore.ifGliding, true));
     }
 
     @Override
     public boolean hasCondition() {
-        return getCondition().getValue();
+        return getCondition().isConfigured();
     }
 
     @Override

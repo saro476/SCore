@@ -3,12 +3,13 @@ package com.ssomar.score.features.types.list;
 import com.ssomar.score.editor.NewGUIManager;
 import com.ssomar.score.editor.Suggestion;
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsInterface;
 import com.ssomar.score.menu.EditorCreator;
+import com.ssomar.score.utils.placeholders.StringPlaceholder;
 import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -22,8 +23,8 @@ public class ListColoredStringFeature extends ListFeatureAbstract<String, ListCo
 
     private Optional<List<Suggestion>> suggestions;
 
-    public ListColoredStringFeature(FeatureParentInterface parent, String name, List<String> defaultValue, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium, boolean notSaveIfEqualsToDefaultValue, Optional<List<Suggestion>> suggestions) {
-        super(parent, name, "List of Colored Strings", editorName, editorDescription, editorMaterial, defaultValue, requirePremium, notSaveIfEqualsToDefaultValue);
+    public ListColoredStringFeature(FeatureParentInterface parent, List<String> defaultValue, FeatureSettingsInterface featureSettings, boolean notSaveIfEqualsToDefaultValue, Optional<List<Suggestion>> suggestions) {
+        super(parent, "List of Colored Strings",  defaultValue, featureSettings, notSaveIfEqualsToDefaultValue);
         this.suggestions = suggestions;
         reset();
     }
@@ -47,7 +48,7 @@ public class ListColoredStringFeature extends ListFeatureAbstract<String, ListCo
 
     @Override
     public ListColoredStringFeature clone(FeatureParentInterface newParent) {
-        ListColoredStringFeature clone = new ListColoredStringFeature(newParent, this.getName(), getDefaultValue(), getEditorName(), getEditorDescription(), getEditorMaterial(), isRequirePremium(), isNotSaveIfEqualsToDefaultValue(), suggestions);
+        ListColoredStringFeature clone = new ListColoredStringFeature(newParent, getDefaultValue(), getFeatureSettings(), isNotSaveIfEqualsToDefaultValue(), suggestions);
         clone.setValues(getValues());
         clone.setBlacklistedValues(getBlacklistedValues());
         return clone;
@@ -84,5 +85,13 @@ public class ListColoredStringFeature extends ListFeatureAbstract<String, ListCo
         EditorCreator editor = new EditorCreator(beforeMenu, (List<String>) manager.currentWriting.get(playerEditor), getEditorName() + ":", true, true, true, true,
                 true, true, false, "", suggestions);
         editor.generateTheMenuAndSendIt(playerEditor);
+    }
+
+    public List<String> getValue(StringPlaceholder sp){
+        List<String> result = new ArrayList<>();
+        for(String s : this.getValues()) {
+            result.add(sp.replacePlaceholder(s));
+        }
+        return result;
     }
 }

@@ -1,6 +1,7 @@
 package com.ssomar.score.commands.score;
 
 import com.ssomar.executableblocks.executableblocks.activators.ActivatorEBFeature;
+import com.ssomar.executableevents.executableevents.activators.ActivatorEEFeature;
 import com.ssomar.executableitems.executableitems.activators.ActivatorEIFeature;
 import com.ssomar.particles.commands.Parameter;
 import com.ssomar.particles.commands.Shape;
@@ -20,7 +21,7 @@ import com.ssomar.score.commands.score.clear.ClearType;
 import com.ssomar.score.configs.messages.Message;
 import com.ssomar.score.configs.messages.MessageMain;
 import com.ssomar.score.events.loop.LoopManager;
-import com.ssomar.score.features.custom.activators.activator.NewSActivator;
+import com.ssomar.score.features.custom.activators.activator.SActivator;
 import com.ssomar.score.features.custom.cooldowns.CooldownsManager;
 import com.ssomar.score.features.custom.loop.LoopFeatures;
 import com.ssomar.score.hardness.hardness.Hardness;
@@ -74,7 +75,7 @@ public final class CommandsClass implements CommandExecutor, TabExecutor {
     @NotNull
     private final SCore main;
 
-    private final String[] commands = new String[]{"cooldowns", "hardnesses", "hardnesses-create", "hardnesses-delete", "inspect-loop", "particles", "particles-info", "projectiles", "projectiles-create", "projectiles-delete", "reload", "run-entity-command", "run-block-command", "run-player-command", "variables", "variables-create", "variables-delete"};
+    private final String[] commands = new String[]{"clear","cooldowns", "hardnesses", "hardnesses-create", "hardnesses-delete", "inspect-loop", "particles", "particles-info", "projectiles", "projectiles-create", "projectiles-delete", "reload", "run-entity-command", "run-block-command", "run-player-command", "variables", "variables-create", "variables-delete"};
 
     /**
      * Called when a {@link CommandSender} types /score.
@@ -139,6 +140,10 @@ public final class CommandsClass implements CommandExecutor, TabExecutor {
                 if (args.length >= 1) {
                     switch (args[0]) {
                         case "clear":
+                            if (args.length <= 2) {
+                                sender.sendMessage(StringConverter.coloredString("&4[SCore] &cInvalid argument! Usage: /score cooldowns clear &7cooldownId"));
+                                return;
+                            }
                             String cooldownId = args[1];
                             UUID uuid = null;
                             if (args.length >= 3) {
@@ -409,14 +414,14 @@ public final class CommandsClass implements CommandExecutor, TabExecutor {
 
                 break;
             case "inspect-loop":
-                final Map<NewSActivator, Integer> loops = LoopManager.getInstance().getLoopActivators();
+                final Map<SActivator, Integer> loops = LoopManager.getInstance().getLoopActivators();
 
                 this.sm.sendMessage(sender, " ");
                 this.sm.sendMessage(sender, "&8==== &7SCore contains &e" + loops.size() + " &7loop(s) &8====");
                 this.sm.sendMessage(sender, "&7&o(The loop of ExecutableItems requires more performance when there are many players)");
                 this.sm.sendMessage(sender, " ");
 
-                for (final NewSActivator sAct : loops.keySet()) {
+                for (final SActivator sAct : loops.keySet()) {
                     LoopFeatures loop = null;
 
                     for (final Object feature : sAct.getFeatures())
@@ -435,6 +440,9 @@ public final class CommandsClass implements CommandExecutor, TabExecutor {
                         this.sm.sendMessage(sender, "&bEI LOOP > &7item: &e" + sAct.getParentObjectId() + " &7delay: &e" + delay + " &7(in ticks)");
                     else if (SCore.hasExecutableBlocks && sAct instanceof ActivatorEBFeature)
                         this.sm.sendMessage(sender, "&aEB LOOP > &7block: &e" + sAct.getParentObjectId() + " &7delay: &e" + delay + " &7(in ticks)");
+                    else if (SCore.hasExecutableEvents && sAct instanceof ActivatorEEFeature)
+                        this.sm.sendMessage(sender, "&6EE LOOP > &7event: &e" + sAct.getParentObjectId() + " &7delay: &e" + delay + " &7(in ticks)");
+
                 }
 
                 this.sm.sendMessage(sender, " ");
@@ -753,7 +761,9 @@ public final class CommandsClass implements CommandExecutor, TabExecutor {
                         if (args.length == 2) {
                             arguments.add("clear");
                         } else if (args.length == 3 && args[1].equalsIgnoreCase("clear")) {
-                            arguments.addAll(CooldownsManager.getInstance().getAllCooldownIds());
+                            List<String> cooldowns = CooldownsManager.getInstance().getAllCooldownIds();
+                            if (cooldowns.isEmpty()) arguments.add("No cooldowns to clear");
+                            else arguments.addAll(cooldowns);
                         } else if (args.length == 4 && args[1].equalsIgnoreCase("clear")) {
                             arguments.add("[UUID]");
                         }

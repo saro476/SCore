@@ -12,10 +12,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.util.Vector;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Getter
@@ -71,6 +75,10 @@ public class EventInfo {
     private Optional<DetailedInteraction> detailedInteraction;
 
     private Optional<EntityDamageEvent.DamageCause> damageCause;
+
+    private Optional<InventoryType> inventoryType;
+
+    private Optional<Inventory> inventory;
 
     /* Projectile velocity */
     private Optional<Vector> velocity;
@@ -151,5 +159,23 @@ public class EventInfo {
         eInfo.setWorld(world);
 
         return eInfo;
+    }
+
+    public Map<String, String> getPlaceholderOfCommand(){
+        Map<String, String> placeholders = new HashMap<>();
+        if(command.isPresent()){
+            placeholders.put("%all_args%", command.get().replaceAll("%[^ ]*%", ""));
+            String[] split = command.get().split(" ");
+            String allArgsWithoutFirst = "";
+            int i = 0;
+            for (String arg : split) {
+                if(i != 0) allArgsWithoutFirst += arg + " ";
+                placeholders.put("%arg" + i + "%", arg.replaceAll("%[^ ]*%", ""));
+                i++;
+            }
+            allArgsWithoutFirst = allArgsWithoutFirst.trim();
+            placeholders.put("%all_args_without_first%", allArgsWithoutFirst.replaceAll("%[^ ]*%", ""));
+        }
+        return placeholders;
     }
 }

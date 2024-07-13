@@ -1,19 +1,15 @@
 package com.ssomar.score.features.types;
 
 import com.ssomar.score.editor.NewGUIManager;
-import com.ssomar.score.features.FeatureAbstract;
-import com.ssomar.score.features.FeatureParentInterface;
-import com.ssomar.score.features.FeatureRequireOnlyClicksInEditor;
-import com.ssomar.score.features.FeatureReturnCheckPremium;
+import com.ssomar.score.features.*;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.splugin.SPlugin;
+import com.ssomar.score.utils.item.UpdateItemInGUI;
 import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Arrow;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -27,8 +23,8 @@ public class PickupFeature extends FeatureAbstract<Optional<Arrow.PickupStatus>,
     private Optional<Arrow.PickupStatus> value;
     private Optional<Arrow.PickupStatus> defaultValue;
 
-    public PickupFeature(FeatureParentInterface parent, String name, Optional<Arrow.PickupStatus> defaultValue, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public PickupFeature(FeatureParentInterface parent,Optional<Arrow.PickupStatus> defaultValue, FeatureSettingsInterface featureSettings) {
+        super(parent, featureSettings);
         this.defaultValue = defaultValue;
         this.value = Optional.empty();
     }
@@ -85,7 +81,7 @@ public class PickupFeature extends FeatureAbstract<Optional<Arrow.PickupStatus>,
 
     @Override
     public PickupFeature clone(FeatureParentInterface newParent) {
-        PickupFeature clone = new PickupFeature(newParent, this.getName(), getDefaultValue(), getEditorName(), getEditorDescription(), getEditorMaterial(), requirePremium());
+        PickupFeature clone = new PickupFeature(newParent, getDefaultValue(), getFeatureSettings());
         clone.value = value;
         return clone;
     }
@@ -192,13 +188,9 @@ public class PickupFeature extends FeatureAbstract<Optional<Arrow.PickupStatus>,
         }
         meta.setLore(lore);
         item.setItemMeta(meta);
-        /* Update the gui only for the right click , for the left it updated automaticaly idk why */
-        for (HumanEntity e : gui.getInv().getViewers()) {
-            if (e instanceof Player) {
-                Player p = (Player) e;
-                p.updateInventory();
-            }
-        }
+
+        /* Bug item no update idk why */
+        UpdateItemInGUI.updateItemInGUI(gui, getEditorName(), meta.getDisplayName(), lore, item.getType());
     }
 
     public Arrow.PickupStatus getPickupStatus(GUI gui) {

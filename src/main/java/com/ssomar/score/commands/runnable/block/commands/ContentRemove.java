@@ -34,7 +34,7 @@ public class ContentRemove extends BlockCommand {
 
             //ItemStack item = new ItemStack(Material.getMaterial(args.get(0)),amount);
 
-            if (block.getState() instanceof Container && p != null) {
+            if (block.getState() instanceof Container) {
 
                 Container container = (Container) block.getState();
                 Inventory inv = container.getInventory();
@@ -53,9 +53,10 @@ public class ContentRemove extends BlockCommand {
                             }
                         }
                         else{
-                            ExecutableItemObject eio = new ExecutableItemObject(itemChest);
+                           ExecutableItemObject eio = new ExecutableItemObject(itemChest);
                             if(eio.isValid()){
-                                if(eio.getConfig().getId().equalsIgnoreCase(args.get(0).replace("EI:", "").replace("ei:", ""))){
+                                String id = args.get(0).split(":")[1];
+                                if(eio.getConfig().getId().equalsIgnoreCase(id)){
                                     itemChest.setAmount(itemChest.getAmount() - 1);
                                     break;
                                 }

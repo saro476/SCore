@@ -8,7 +8,6 @@ import com.ssomar.score.splugin.SPlugin;
 import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
@@ -26,11 +25,19 @@ public abstract class ListFeatureAbstract<T, Y extends FeatureInterface<List<T>,
     private String featureName;
 
 
-    public ListFeatureAbstract(FeatureParentInterface parent, String name, String featureName, String editorName, String[] editorDescription, Material editorMaterial, List<T> defaultValue, boolean requirePremium, boolean notSaveIfEqualsToDefaultValue) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public ListFeatureAbstract(FeatureParentInterface parent, String featureName, List<T> defaultValue, FeatureSettingsInterface featureSettings, boolean notSaveIfEqualsToDefaultValue) {
+        super(parent, featureSettings);
         this.defaultValue = defaultValue;
         this.notSaveIfEqualsToDefaultValue = notSaveIfEqualsToDefaultValue;
         this.featureName = featureName;
+        reset();
+    }
+
+    public ListFeatureAbstract() {
+        super(null, null);
+        defaultValue = new ArrayList<>();
+        notSaveIfEqualsToDefaultValue = false;
+        featureName = null;
         reset();
     }
 
@@ -45,7 +52,7 @@ public abstract class ListFeatureAbstract<T, Y extends FeatureInterface<List<T>,
         List<String> forValue = new ArrayList<>();
         List<String> forBlacklistedValues = new ArrayList<>();
         for (String s : entries) {
-           //SsomarDev.testMsg("load: " + s, true);
+            //SsomarDev.testMsg("load: " + s, true);
             if (s.startsWith("!")) {
                 s = s.substring(1);
                 //SsomarDev.testMsg("blacklisted: " + s, true);
@@ -73,8 +80,8 @@ public abstract class ListFeatureAbstract<T, Y extends FeatureInterface<List<T>,
     public void save(ConfigurationSection config) {
         //SsomarDev.testMsg("save deVal s: " + defaultValue.size() + " val s: " + value.size() + " >> " + (defaultValue.containsAll(value)));
         if (notSaveIfEqualsToDefaultValue && defaultValue.containsAll(values)) {
-                config.set(this.getName(), null);
-                return;
+            config.set(this.getName(), null);
+            return;
         }
         config.set(this.getName(), getCurrentValues());
     }
@@ -110,7 +117,7 @@ public abstract class ListFeatureAbstract<T, Y extends FeatureInterface<List<T>,
     @Override
     public List<String> getCurrentValues() {
         List<String> currentValues = new ArrayList<>();
-        for(T value : values){
+        for (T value : values) {
             currentValues.add(transfromToString(value));
         }
         for (T value : blacklistedValues) {
@@ -131,7 +138,7 @@ public abstract class ListFeatureAbstract<T, Y extends FeatureInterface<List<T>,
     @Override
     public void finishEditInSubEditor(Player editor, NewGUIManager manager) {
         List<String> values = StringConverter.coloredString((List<String>) manager.currentWriting.get(editor));
-        load(SCore.plugin, values, requirePremium());
+        load(SCore.plugin, values, this.isRequirePremium());
         manager.requestWriting.remove(editor);
         manager.activeTextEditor.remove(editor);
         updateItemParentEditor((GUI) manager.getCache().get(editor));

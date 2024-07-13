@@ -6,10 +6,12 @@ import com.ssomar.executableblocks.executableblocks.ExecutableBlocksManager;
 import com.ssomar.executableblocks.executableblocks.internal.InternalData;
 import com.ssomar.executableblocks.utils.OverrideEBP;
 import com.ssomar.score.SCore;
+import com.ssomar.score.SsomarDev;
 import com.ssomar.score.commands.runnable.ActionInfo;
 import com.ssomar.score.commands.runnable.ArgumentChecker;
 import com.ssomar.score.commands.runnable.player.PlayerCommand;
 import com.ssomar.score.usedapi.MultiverseAPI;
+import com.ssomar.score.utils.CreationType;
 import com.ssomar.score.utils.safeplace.SafePlace;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -97,7 +99,10 @@ public class SetExecutableBlock extends PlayerCommand {
             if (SCore.hasMultiverse) {
                 world = MultiverseAPI.getWorld(worldStr);
             } else {
-                if ((world = Bukkit.getWorld(worldStr)) == null) return;
+                if ((world = Bukkit.getWorld(worldStr)) == null){
+                    SsomarDev.testMsg("The world "+worldStr+" doesn't exist", true);
+                    return;
+                }
             }
         }
 
@@ -106,7 +111,6 @@ public class SetExecutableBlock extends PlayerCommand {
         if (args.size() > 6) {
             bypassProtection = Boolean.valueOf(args.get(6));
         }
-
         UUID ownerUUID = null;
         Optional<Player> owner = Optional.empty();
         if (args.size() > 7) {
@@ -116,7 +120,11 @@ public class SetExecutableBlock extends PlayerCommand {
 
         Location loc = new Location(world, x, y, z);
 
-        if (!replace && !loc.getBlock().isEmpty()) return;
+        if (!replace && !loc.getBlock().isEmpty()){
+            SsomarDev.testMsg("The block is not empty and replace = false", true);
+            return;
+        }
+        SsomarDev.testMsg("Command 2 ", true);
 
         OverrideEBP overrideEBP = OverrideEBP.KEEP_EXISTING_EBP;
         if (replace) overrideEBP = OverrideEBP.REMOVE_EXISTING_EBP;
@@ -128,6 +136,7 @@ public class SetExecutableBlock extends PlayerCommand {
 
         ExecutableBlock eB = oOpt.get();
 
+        if(eB.getCreationType().getValue().get() != CreationType.DISPLAY_CREATION) loc = loc.getBlock().getLocation();
         eB.place(loc, true, overrideEBP, null, null, new InternalData().setOwnerUUID(ownerUUID));
     }
 

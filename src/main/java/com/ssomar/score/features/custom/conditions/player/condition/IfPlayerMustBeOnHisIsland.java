@@ -2,26 +2,26 @@ package com.ssomar.score.features.custom.conditions.player.condition;
 
 import com.ssomar.score.SCore;
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.custom.conditions.player.PlayerConditionFeature;
 import com.ssomar.score.features.custom.conditions.player.PlayerConditionRequest;
 import com.ssomar.score.features.types.BooleanFeature;
 import com.ssomar.score.usedapi.BentoBoxAPI;
 import com.ssomar.score.usedapi.IridiumSkyblockTool;
 import com.ssomar.score.usedapi.SuperiorSkyblockTool;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 public class IfPlayerMustBeOnHisIsland extends PlayerConditionFeature<BooleanFeature, IfPlayerMustBeOnHisIsland> {
 
     public IfPlayerMustBeOnHisIsland(FeatureParentInterface parent) {
-        super(parent, "ifPlayerMustBeOnHisIsland", "If player must be on his island", new String[]{}, Material.ANVIL, false);
+        super(parent, FeatureSettingsSCore.ifPlayerMustBeOnHisIsland);
     }
 
     @Override
     public boolean verifCondition(PlayerConditionRequest request) {
         Player player = request.getPlayer();
         if (SCore.hasIridiumSkyblock) {
-            if (hasCondition()) {
+            if (getCondition().getValue(request.getSp())) {
                 if (!IridiumSkyblockTool.playerIsOnHisIsland(player)) {
                     runInvalidCondition(request);
                     return false;
@@ -53,12 +53,12 @@ public class IfPlayerMustBeOnHisIsland extends PlayerConditionFeature<BooleanFea
 
     @Override
     public void subReset() {
-        setCondition(new BooleanFeature(getParent(), "ifPlayerMustBeOnHisIsland", false, "If player must be on his island", new String[]{}, Material.LEVER, false, true));
+        setCondition(new BooleanFeature(getParent(),  false, FeatureSettingsSCore.ifPlayerMustBeOnHisIsland, true));
     }
 
     @Override
     public boolean hasCondition() {
-        return getCondition().getValue();
+        return getCondition().isConfigured();
     }
 
     @Override

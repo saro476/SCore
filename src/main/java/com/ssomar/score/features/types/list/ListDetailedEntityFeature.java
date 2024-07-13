@@ -4,13 +4,11 @@ import com.ssomar.score.SCore;
 import com.ssomar.score.SsomarDev;
 import com.ssomar.score.editor.NewGUIManager;
 import com.ssomar.score.editor.Suggestion;
-import com.ssomar.score.features.FeatureAbstract;
-import com.ssomar.score.features.FeatureParentInterface;
-import com.ssomar.score.features.FeatureRequireSubTextEditorInEditor;
-import com.ssomar.score.features.FeatureReturnCheckPremium;
+import com.ssomar.score.features.*;
 import com.ssomar.score.menu.EditorCreator;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.splugin.SPlugin;
+import com.ssomar.score.usedapi.Dependency;
 import com.ssomar.score.usedapi.MythicMobsAPI;
 import com.ssomar.score.utils.numbers.NTools;
 import com.ssomar.score.utils.strings.StringConverter;
@@ -19,7 +17,6 @@ import de.tr7zw.nbtapi.NBTType;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -45,8 +42,8 @@ public class ListDetailedEntityFeature extends FeatureAbstract<List<String>, Lis
     private List<String> defaultValue;
     private boolean notSaveIfEqualsToDefaultValue;
 
-    public ListDetailedEntityFeature(FeatureParentInterface parent, String name, List<String> defaultValue, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium, boolean notSaveIfEqualsToDefaultValue) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public ListDetailedEntityFeature(FeatureParentInterface parent, List<String> defaultValue, FeatureSettingsInterface featureSettings, boolean notSaveIfEqualsToDefaultValue) {
+        super(parent, featureSettings);
         this.defaultValue = defaultValue;
         this.notSaveIfEqualsToDefaultValue = notSaveIfEqualsToDefaultValue;
         reset();
@@ -81,9 +78,9 @@ public class ListDetailedEntityFeature extends FeatureAbstract<List<String>, Lis
             }
 
             try {
-                EntityType.valueOf(entityTypeStr.toUpperCase());
+                if(!entityTypeStr.equals("*")) EntityType.valueOf(entityTypeStr.toUpperCase());
             } catch (IllegalArgumentException e) {
-                errors.add("&cERROR, Couldn't load the EntityType value of " + this.getName() + " from config, value: " + s + " &7&o" + getParent().getParentInfo() + " &6>> EntityTypes available: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/entity/EntityType.html");
+                errors.add("&cERROR, Couldn't load the EntityType value of " + this.getName() + " from config, value: " + s + " &7&o" + getParent().getParentInfo() + " &6>> EntityTypes available: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/entity/EntityType.html , you can also use MythicMobs entities with the prefix MM- , or accept all entities with *");
                 continue;
             }
             value.add(baseValue);
@@ -133,12 +130,23 @@ public class ListDetailedEntityFeature extends FeatureAbstract<List<String>, Lis
                     tags.put(dataSplit[0], dataSplit[1]);
                 }
             }
-            type = EntityType.valueOf(entityTypeStr.toUpperCase());
+            if(entityTypeStr.equals("*")){
+                for(EntityType entityType : EntityType.values()){
+                    if (conditions.containsKey(entityType)) {
+                        conditions.get(entityType).add(tags);
+                    } else {
+                        conditions.put(entityType, new ArrayList<>(Collections.singletonList(tags)));
+                    }
+                }
+            }
+            else {
+                type = EntityType.valueOf(entityTypeStr.toUpperCase());
 
-            if (conditions.containsKey(type)) {
-                conditions.get(type).add(tags);
-            } else {
-                conditions.put(type, new ArrayList<>(Collections.singletonList(tags)));
+                if (conditions.containsKey(type)) {
+                    conditions.get(type).add(tags);
+                } else {
+                    conditions.put(type, new ArrayList<>(Collections.singletonList(tags)));
+                }
             }
         }
         return conditions;
@@ -220,7 +228,7 @@ public class ListDetailedEntityFeature extends FeatureAbstract<List<String>, Lis
         for (Map<String, String> tags : tagsList) {
             boolean invalid = false;
             if (tags.isEmpty()) return true;
-            else {
+            else if(Dependency.NBTAPI.isEnabled()){
                 NBTEntity nbtent = new NBTEntity(entity);
                 for (String key : tags.keySet()) {
                     String value = tags.get(key);
@@ -281,6 +289,7 @@ public class ListDetailedEntityFeature extends FeatureAbstract<List<String>, Lis
                                 if (key.equalsIgnoreCase(("CustomName"))) {
                                     String customName = entity.getCustomName();
                                     SsomarDev.testMsg("String: " + customName, DEBUG);
+                                    if(value.equals("*")) break;
                                     if (!StringConverter.decoloredString(customName).equals(value))
                                         invalid = true;
                                 } else {
@@ -334,7 +343,7 @@ public class ListDetailedEntityFeature extends FeatureAbstract<List<String>, Lis
 
     @Override
     public ListDetailedEntityFeature clone(FeatureParentInterface newParent) {
-        ListDetailedEntityFeature clone = new ListDetailedEntityFeature(newParent, this.getName(), getDefaultValue(), getEditorName(), getEditorDescription(), getEditorMaterial(), isRequirePremium(), isNotSaveIfEqualsToDefaultValue());
+        ListDetailedEntityFeature clone = new ListDetailedEntityFeature(newParent, getDefaultValue(), getFeatureSettings(), isNotSaveIfEqualsToDefaultValue());
         clone.setValue(getValues());
         return clone;
     }

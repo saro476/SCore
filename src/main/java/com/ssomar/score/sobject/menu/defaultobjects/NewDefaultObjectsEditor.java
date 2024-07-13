@@ -2,14 +2,14 @@ package com.ssomar.score.sobject.menu.defaultobjects;
 
 import com.ssomar.score.SCore;
 import com.ssomar.score.menu.GUI;
-import com.ssomar.score.sobject.NewSObject;
-import com.ssomar.score.sobject.NewSObjectLoader;
-import com.ssomar.score.sobject.NewSObjectManager;
-import com.ssomar.score.sobject.menu.NewSObjectsEditorAbstract;
+import com.ssomar.score.sobject.*;
+import com.ssomar.score.sobject.SObjectWithFileLoader;
+import com.ssomar.score.sobject.SObjectWithFileManager;
 import com.ssomar.score.sobject.menu.NewSObjectsManagerEditor;
+import com.ssomar.score.sobject.menu.SObjectsEditorAbstract;
 import com.ssomar.score.splugin.SPlugin;
-import com.ssomar.score.utils.strings.StringConverter;
 import com.ssomar.score.utils.messages.CenteredMessage;
+import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -24,33 +24,35 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class NewDefaultObjectsEditor extends GUI {
+public class NewDefaultObjectsEditor<T extends SObjectWithFile & SObjectEditable & SObjectBuildable> extends GUI {
 
     private static final int SOBJECT_PER_PAGE = 27;
     @Getter
     @Setter
     private static int index;
-    private final NewSObjectManager<NewSObject> manager;
-    private final NewSObjectLoader loader;
+    private final SObjectWithFileManager<T> manager;
+    private final SObjectWithFileLoader<T> loader;
     private final SPlugin sPlugin;
-    private final NewSObjectsEditorAbstract back;
+    private final SObjectsEditorAbstract back;
 
-    public NewDefaultObjectsEditor(SPlugin sPlugin, NewSObjectManager manager, NewSObjectLoader loader, NewSObjectsEditorAbstract back) {
+    public NewDefaultObjectsEditor(SPlugin sPlugin, SObjectWithFileManager<T> manager, SObjectsEditorAbstract back) {
         super("&8&lDefault objects", 5 * 9);
         this.manager = manager;
-        this.loader = loader;
+        this.loader = manager.getFileLoader();
         this.sPlugin = sPlugin;
         index = 1;
         this.back = back;
         load();
     }
 
+
+
     public void load() {
         clearAndSetBackground();
-        List<NewSObject> items = manager.getDefaultObjects();
+        List<T> items = manager.getDefaultObjects();
         int i = 0;
         int total = 0;
-        for (NewSObject sObject : items) {
+        for (T sObject : items) {
 
             /* Get real id to make it proper */
             Map<String, String> randomIdsDefaultItems = loader.getRandomIdsDefaultObjects();
@@ -63,7 +65,7 @@ public class NewDefaultObjectsEditor extends GUI {
 
             if ((index - 1) * SOBJECT_PER_PAGE <= total && total < index * SOBJECT_PER_PAGE) {
 
-                ItemStack itemS = sObject.buildItem(1, Optional.empty());
+                ItemStack itemS = sObject.getIconItem();
 
                 List<String> desc = new ArrayList<>();
                 desc.add("");
@@ -93,6 +95,7 @@ public class NewDefaultObjectsEditor extends GUI {
         }
         createItem(RED, 1, 36, BACK, false, false);
 
+
         createItem(PURPLE, 1, 40, "&5&l▶ &dGive to you all items", true, false);
     }
 
@@ -111,8 +114,8 @@ public class NewDefaultObjectsEditor extends GUI {
     }
 
     public void giveAllObjects(Player player) {
-        List<NewSObject> items = manager.getDefaultObjects();
-        for (NewSObject sObject : items) {
+        List<T> items = manager.getDefaultObjects();
+        for (T sObject : items) {
             player.getInventory().addItem(sObject.buildItem(1, Optional.of(player)));
             player.sendMessage(StringConverter.coloredString("&2&l" + sPlugin.getNameDesign() + " &aYou received &e" + sObject.getId()));
         }
@@ -120,7 +123,7 @@ public class NewDefaultObjectsEditor extends GUI {
 
     public void giveSObject(String objectID, Player p) {
         objectID = (String) loader.getRandomIdsDefaultObjects().get(objectID);
-        Optional<NewSObject> optional = manager.getLoadedObjectWithID(objectID);
+        Optional<T> optional = manager.getLoadedObjectWithID(objectID);
 
         String  objectName = sPlugin.getObjectName();
         /* For plugins that have multiple object splugin.getOjectName can't work */
@@ -129,7 +132,7 @@ public class NewDefaultObjectsEditor extends GUI {
 
 
         if (optional.isPresent()) {
-            NewSObject sObject = optional.get();
+            T sObject = optional.get();
             p.getInventory().addItem(sObject.buildItem(1, Optional.of(p)));
             p.sendMessage(StringConverter.coloredString("&2&l[" + sPlugin.getNameDesign() + "] &aYou received &e" + objectID));
 

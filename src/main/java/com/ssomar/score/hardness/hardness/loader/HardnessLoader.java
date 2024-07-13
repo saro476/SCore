@@ -3,13 +3,13 @@ package com.ssomar.score.hardness.hardness.loader;
 import com.ssomar.score.SCore;
 import com.ssomar.score.hardness.hardness.Hardness;
 import com.ssomar.score.hardness.hardness.manager.HardnessesManager;
-import com.ssomar.score.sobject.NewSObjectLoader;
+import com.ssomar.score.sobject.SObjectWithFileLoader;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.io.*;
 import java.util.*;
 
-public class HardnessLoader extends NewSObjectLoader<Hardness> {
+public class HardnessLoader extends SObjectWithFileLoader<Hardness> {
 
     private static HardnessLoader instance;
 
@@ -25,7 +25,7 @@ public class HardnessLoader extends NewSObjectLoader<Hardness> {
         HardnessesManager.getInstance().setDefaultObjects(new ArrayList<>());
         /* // TODO if (!GeneralConfig.getInstance().isDisableTestItems()) {*/
         //if (PlaceholderAPI.isLotOfWork()) {
-            this.loadDefaultPremiumObjects(this.getPremiumDefaultObjectsName());
+            this.loadDefaultPremiumObjects();
         //}
         //this.loadDefaultEncodedPremiumObjects(this.getPremiumPackObjectsName());
         //}
@@ -39,27 +39,11 @@ public class HardnessLoader extends NewSObjectLoader<Hardness> {
         if ((itemsDirectory = new File(SCore.plugin.getDataFolder() + "/hardnesses")).exists()) {
             this.loadObjectsInFolder(itemsDirectory, true);
         } else {
-            this.createDefaultObjectsFile(true);
+            this.createDefaultObjectsFile( true);
             this.load();
         }
     }
 
-    public Map<String, List<String>> getPremiumPackObjectsName() {
-        Map<String, List<String>> defaultItems = new HashMap<>();
-
-        return defaultItems;
-    }
-
-    @Override
-    public Map<String, List<String>> getPremiumDefaultObjectsName() {
-        Map<String, List<String>> defaultBlocks = new HashMap<>();
-
-        List<String> defaultProj = new ArrayList<>();
-
-        defaultBlocks.put(DEFAULT, defaultProj);
-
-        return defaultBlocks;
-    }
 
 
     public Map<String, List<String>> getNotEditableProjectilesName() {
@@ -67,17 +51,6 @@ public class HardnessLoader extends NewSObjectLoader<Hardness> {
 
         List<String> defaultProj = new ArrayList<>();
 
-
-        defaultBlocks.put(DEFAULT, defaultProj);
-
-        return defaultBlocks;
-    }
-
-    @Override
-    public Map<String, List<String>> getFreeDefaultObjectsName() {
-        Map<String, List<String>> defaultBlocks = new HashMap<>();
-
-        List<String> defaultProj = new ArrayList<>();
 
         defaultBlocks.put(DEFAULT, defaultProj);
 

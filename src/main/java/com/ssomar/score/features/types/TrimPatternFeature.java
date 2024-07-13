@@ -2,12 +2,10 @@ package com.ssomar.score.features.types;
 
 import com.ssomar.score.SCore;
 import com.ssomar.score.editor.NewGUIManager;
-import com.ssomar.score.features.FeatureAbstract;
-import com.ssomar.score.features.FeatureParentInterface;
-import com.ssomar.score.features.FeatureRequireClicksOrOneMessageInEditor;
-import com.ssomar.score.features.FeatureReturnCheckPremium;
+import com.ssomar.score.features.*;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.splugin.SPlugin;
+import com.ssomar.score.utils.item.UpdateItemInGUI;
 import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +17,6 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -35,8 +32,8 @@ public class TrimPatternFeature extends FeatureAbstract<Optional<TrimPattern>, T
     private Optional<TrimPattern> value;
     private Optional<TrimPattern> defaultValue;
 
-    public TrimPatternFeature(FeatureParentInterface parent, String name, Optional<TrimPattern> defaultValue, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium) {
-        super(parent, name, editorName, editorDescription, editorMaterial, requirePremium);
+    public TrimPatternFeature(FeatureParentInterface parent,Optional<TrimPattern> defaultValue, FeatureSettingsInterface featureSettings) {
+        super(parent, featureSettings);
         this.defaultValue = defaultValue;
         this.value = Optional.empty();
     }
@@ -99,7 +96,7 @@ public class TrimPatternFeature extends FeatureAbstract<Optional<TrimPattern>, T
 
     @Override
     public TrimPatternFeature clone(FeatureParentInterface newParent) {
-        TrimPatternFeature clone = new TrimPatternFeature(newParent, this.getName(), getDefaultValue(), getEditorName(), getEditorDescription(), getEditorMaterial(), requirePremium());
+        TrimPatternFeature clone = new TrimPatternFeature(newParent, getDefaultValue(), getFeatureSettings());
         clone.value = value;
         return clone;
     }
@@ -246,13 +243,8 @@ public class TrimPatternFeature extends FeatureAbstract<Optional<TrimPattern>, T
         }
         meta.setLore(lore);
         item.setItemMeta(meta);
-        /* Update the gui only for the right click , for the left it updated automaticaly idk why */
-        for (HumanEntity e : gui.getInv().getViewers()) {
-            if (e instanceof Player) {
-                Player p = (Player) e;
-                p.updateInventory();
-            }
-        }
+        /* Bug item no update idk why */
+        UpdateItemInGUI.updateItemInGUI(gui, getEditorName(), meta.getDisplayName(), lore, item.getType());
     }
 
     public TrimPattern getPattern(GUI gui) {

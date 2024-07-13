@@ -4,7 +4,7 @@ import com.ssomar.score.SCore;
 import com.ssomar.score.config.GeneralConfig;
 import com.ssomar.score.data.Database;
 import com.ssomar.score.data.VariablesQuery;
-import com.ssomar.score.sobject.NewSObjectManager;
+import com.ssomar.score.sobject.SObjectWithFileManager;
 import com.ssomar.score.variables.Variable;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public class VariablesManager extends NewSObjectManager<Variable> {
+public class VariablesManager extends SObjectWithFileManager<Variable> {
 
     private static VariablesManager instance;
 
@@ -40,6 +40,8 @@ public class VariablesManager extends NewSObjectManager<Variable> {
     public Optional<Variable> methodObjectLoading(String s) {
         return Optional.empty();
     }
+
+
 
     public static VariablesManager getInstance() {
         if (instance == null) {
@@ -129,6 +131,8 @@ public class VariablesManager extends NewSObjectManager<Variable> {
         if (variablesContains) {
             if (check.startsWith("_")) check = check.substring(1);
             String value = check;
+            // There still be placeholder value inside we will replace it later ex : %score_variables-contains_test%around_target_uuid%%
+            if(value.isEmpty()) return Optional.empty();
             return Optional.of(var.get().containsValue(Optional.ofNullable(player.getPlayer()), value) + "");
         } else if (variablesSize) {
 

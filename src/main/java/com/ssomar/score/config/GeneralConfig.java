@@ -3,6 +3,7 @@ package com.ssomar.score.config;
 import com.ssomar.score.SCore;
 import com.ssomar.score.utils.logging.Utils;
 import lombok.Getter;
+import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.List;
 
@@ -33,8 +34,16 @@ public class GeneralConfig extends Config {
     @Getter
     private boolean jetMinionsGenerateBreakActivator;
 
+    @Getter
+    private boolean debugCheckDamages;
+
+    @Getter
+    private boolean loopKillMode;
+
+    private boolean enableDetectionEntitiesFromSpawner;
+
     public GeneralConfig() {
-        super();
+        super("config.yml");
         super.setup(SCore.plugin);
     }
 
@@ -45,6 +54,11 @@ public class GeneralConfig extends Config {
 
     public void reload() {
         super.setup(SCore.plugin);
+    }
+
+    @Override
+    public boolean converter(FileConfiguration config) {
+        return false;
     }
 
     @Override
@@ -67,6 +81,9 @@ public class GeneralConfig extends Config {
         reduceDamageIndicatorWithProtolcolLib = config.getBoolean("reduceDamageIndicatorWithProtolcolLib", false);
         jetMinionsGenerateBreakActivator = config.getBoolean("jetMinionsGenerateBreakActivator", false);
         silenceOutputs = config.getStringList("silenceOutputs");
+        debugCheckDamages = config.getBoolean("debugCheckDamages", false);
+        enableDetectionEntitiesFromSpawner = config.getBoolean("enableDetectionEntitiesFromSpawner", true);
+        loopKillMode = config.getBoolean("loopKillMode", false);
 
     }
 
@@ -124,6 +141,10 @@ public class GeneralConfig extends Config {
 
     public void setDbPort(int dbPort) {
         this.dbPort = dbPort;
+    }
+
+    public boolean isEnableDetectionEntitiesFromSpawner() {
+        return enableDetectionEntitiesFromSpawner;
     }
 
 }

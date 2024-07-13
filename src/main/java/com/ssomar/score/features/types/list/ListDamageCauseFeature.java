@@ -3,12 +3,12 @@ package com.ssomar.score.features.types.list;
 import com.ssomar.score.editor.NewGUIManager;
 import com.ssomar.score.editor.Suggestion;
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsInterface;
 import com.ssomar.score.menu.EditorCreator;
 import com.ssomar.score.utils.strings.StringConverter;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 
@@ -18,8 +18,8 @@ import java.util.*;
 @Setter
 public class ListDamageCauseFeature extends ListFeatureAbstract<EntityDamageEvent.DamageCause, ListDamageCauseFeature> {
 
-    public ListDamageCauseFeature(FeatureParentInterface parent, String name, List<EntityDamageEvent.DamageCause> defaultValue, String editorName, String[] editorDescription, Material editorMaterial, boolean requirePremium, boolean notSaveIfEqualsToDefaultValue) {
-        super(parent, name, "List of DamageCauses", editorName, editorDescription, editorMaterial, defaultValue, requirePremium, notSaveIfEqualsToDefaultValue);
+    public ListDamageCauseFeature(FeatureParentInterface parent, List<EntityDamageEvent.DamageCause> defaultValue, FeatureSettingsInterface featureSettings, boolean notSaveIfEqualsToDefaultValue) {
+        super(parent, "List of DamageCauses", defaultValue, featureSettings, notSaveIfEqualsToDefaultValue);
         reset();
     }
 
@@ -53,7 +53,7 @@ public class ListDamageCauseFeature extends ListFeatureAbstract<EntityDamageEven
 
     @Override
     public ListDamageCauseFeature clone(FeatureParentInterface newParent) {
-        ListDamageCauseFeature clone = new ListDamageCauseFeature(newParent, this.getName(), getDefaultValue(), getEditorName(), getEditorDescription(), getEditorMaterial(), isRequirePremium(), isNotSaveIfEqualsToDefaultValue());
+        ListDamageCauseFeature clone = new ListDamageCauseFeature(newParent,  getDefaultValue(), getFeatureSettings(), isNotSaveIfEqualsToDefaultValue());
         clone.setValues(getValues());
         clone.setBlacklistedValues(getBlacklistedValues());
         return clone;
@@ -67,7 +67,7 @@ public class ListDamageCauseFeature extends ListFeatureAbstract<EntityDamageEven
             getValues().add(mat);
             return Optional.empty();
         } catch (Exception e) {
-            return Optional.of("&4&l[ERROR] &cThe message you entered is not a DamageCause &6>> Materials available: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/event/entity/EntityDamageEvent.DamageCause.html");
+            return Optional.of("&4&l[ERROR] &cThe message you entered is not a DamageCause &6>> DamageCause available: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/event/entity/EntityDamageEvent.DamageCause.html");
         }
     }
 

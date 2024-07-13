@@ -46,8 +46,8 @@ public final class Display {
 
         ItemStack original = itemStack.clone();
         /* player.getOpenInventory() can be null when it is a custom GUI https://discord.com/channels/701066025516531753/1157683507699650560 */
-        Inventory inventory = (player == null || player.getOpenInventory() == null) ? null : player.getOpenInventory().getTopInventory();
-        boolean inInventory = (inventory != null && inventory.contains(original));
+        Inventory inventory = (player == null) ? null : player.getInventory();
+        boolean inInventory = (inventory != null  && !inventory.isEmpty() && inventory.contains(original));
         /* TODO boolean inGui = (player != null && GUIDetectionManager.hasGUIOpen(player)); */
         boolean inGui = false;
         DisplayProperties properties = new DisplayProperties(inInventory, inGui, original);
@@ -84,8 +84,10 @@ public final class Display {
         ItemMeta meta = fast.getItemMeta();
         if(!meta.hasLore()) return itemStack;
         List<String> lore = meta.getLore();
-        if (!lore.isEmpty() && lore.removeIf(line -> line.startsWith(StringConverter.coloredString(PREFIX))))
-                fast.setLore(lore);
+        if (!lore.isEmpty() && lore.removeIf(line -> line.startsWith(StringConverter.coloredString(PREFIX)))) {
+            meta.setLore(lore);
+            fast.setItemMeta(meta);
+        }
         for (List<DisplayModule> modules : REGISTERED_MODULES.values()) {
             for (DisplayModule module : modules)
                 module.revert(itemStack);

@@ -1,27 +1,27 @@
 package com.ssomar.score.features.custom.conditions.entity.condition;
 
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionFeature;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionRequest;
 import com.ssomar.score.features.types.BooleanFeature;
-import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 
 public class IfHasAI extends EntityConditionFeature<BooleanFeature, IfHasAI> {
 
     public IfHasAI(FeatureParentInterface parent) {
-        super(parent, "ifHasAI", "If has AI", new String[]{}, Material.ANVIL, false);
+        super(parent, FeatureSettingsSCore.ifHasAI);
     }
 
     @Override
     public void subReset() {
-        setCondition(new BooleanFeature(getParent(), "ifHasAI", false, "If has AI", new String[]{}, Material.ANVIL, false, true));
+        setCondition(new BooleanFeature(getParent(), false, FeatureSettingsSCore.ifHasAI, true));
     }
 
     @Override
     public boolean hasCondition() {
-        return getCondition().getValue();
+        return getCondition().isConfigured();
     }
 
     @Override
@@ -32,7 +32,7 @@ public class IfHasAI extends EntityConditionFeature<BooleanFeature, IfHasAI> {
     @Override
     public boolean verifCondition(EntityConditionRequest request) {
         Entity entity = request.getEntity();
-        if (hasCondition() && entity instanceof LivingEntity && !((LivingEntity) entity).hasAI()) {
+        if (getCondition().getValue(request.getSp()) && entity instanceof LivingEntity && !((LivingEntity) entity).hasAI()) {
             runInvalidCondition(request);
             return false;
         }

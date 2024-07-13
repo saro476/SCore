@@ -1,14 +1,12 @@
 package com.ssomar.score.features.custom.detailedblocks;
 
-import com.ssomar.score.features.FeatureInterface;
-import com.ssomar.score.features.FeatureParentInterface;
-import com.ssomar.score.features.FeatureWithHisOwnEditor;
+import com.ssomar.score.SsomarDev;
+import com.ssomar.score.features.*;
 import com.ssomar.score.features.types.BooleanFeature;
 import com.ssomar.score.features.types.ColoredStringFeature;
 import com.ssomar.score.features.types.list.ListDetailedMaterialFeature;
 import com.ssomar.score.menu.GUI;
 import com.ssomar.score.splugin.SPlugin;
-import com.ssomar.score.utils.FixedMaterial;
 import com.ssomar.score.utils.messages.SendMessage;
 import com.ssomar.score.utils.placeholders.StringPlaceholder;
 import lombok.Getter;
@@ -37,22 +35,47 @@ public class DetailedBlocks extends FeatureWithHisOwnEditor<DetailedBlocks, Deta
     private BooleanFeature cancelEventIfNotValid;
     private transient ColoredStringFeature messageIfNotValid;
 
-    public DetailedBlocks(FeatureParentInterface parent, String name, String editorName) {
-        super(parent, name, editorName, new String[]{"&7&oMake the activator run", "&7&oonly for certain blocks", "&7&oempty = all blocks"}, FixedMaterial.getMaterial(Arrays.asList("GRASS_BLOCK", "GRASS")), false);
+    private boolean disableCancelEventIfNotValid = false;
+    private boolean disableMessageIfNotValid = false;
+
+    private boolean notSaveIfEqualsToDefaultValue;
+
+    private final boolean DEBUG = false;
+
+    public DetailedBlocks(FeatureParentInterface parent, FeatureSettingsInterface featureSettings) {
+        super(parent, featureSettings);
         reset();
+        this.notSaveIfEqualsToDefaultValue = false;
+    }
+
+    public DetailedBlocks(FeatureParentInterface parent, FeatureSettingsInterface featureSettings, boolean disableCancelEventIfNotValid, boolean disableMessageIfNotValid, boolean notSaveIfEqualsToDefaultValue) {
+        super(parent, featureSettings);
+        reset();
+        this.disableCancelEventIfNotValid = disableCancelEventIfNotValid;
+        this.disableMessageIfNotValid = disableMessageIfNotValid;
+        this.notSaveIfEqualsToDefaultValue = notSaveIfEqualsToDefaultValue;
     }
 
     public DetailedBlocks(FeatureParentInterface parent) {
-        super(parent, "detailedBlocks", "Detailed Blocks", new String[]{"&7&oMake the activator run", "&7&oonly for certain blocks", "&7&oempty = all blocks"}, FixedMaterial.getMaterial(Arrays.asList("GRASS_BLOCK", "GRASS")), false);
+        super(parent,  FeatureSettingsSCore.detailedBlocks);
         reset();
+        this.notSaveIfEqualsToDefaultValue = false;
+    }
+
+    public DetailedBlocks(FeatureParentInterface parent, boolean disableCancelEventIfNotValid, boolean disableMessageIfNotValid) {
+        super(parent,  FeatureSettingsSCore.detailedBlocks);
+        reset();
+        this.disableCancelEventIfNotValid = disableCancelEventIfNotValid;
+        this.disableMessageIfNotValid = disableMessageIfNotValid;
+        this.notSaveIfEqualsToDefaultValue = false;
     }
 
 
     @Override
     public void reset() {
-        this.blocks = new ListDetailedMaterialFeature(this, "blocks", new ArrayList<>(), "Blocks", new String[]{"&7&oBlocks"}, FixedMaterial.getMaterial(Arrays.asList("GRASS_BLOCK", "GRASS")), false, false, true);
-        this.cancelEventIfNotValid = new BooleanFeature(this, "cancelEventIfNotValid", false, "Cancel event if not valid", new String[]{"&7&oCancel the event if the block is not valid?"}, Material.LEVER, false, false);
-        this.messageIfNotValid = new ColoredStringFeature(this, "messageIfNotValid", Optional.empty() /* Optional.ofNullable("&4&l[Error] &cthe block is not correct !") */, "Message if not valid", new String[]{"&7&oMessage if the block is not valid?"}, GUI.WRITABLE_BOOK, false, false);
+        this.blocks = new ListDetailedMaterialFeature(this, new ArrayList<>(), FeatureSettingsSCore.blocks, false, true);
+        this.cancelEventIfNotValid = new BooleanFeature(this,  false, FeatureSettingsSCore.cancelEventIfNotValid, false);
+        this.messageIfNotValid = new ColoredStringFeature(this, Optional.empty(), FeatureSettingsSCore.messageIfNotValid, false);
     }
 
     @Override
@@ -61,24 +84,29 @@ public class DetailedBlocks extends FeatureWithHisOwnEditor<DetailedBlocks, Deta
         if (config.isConfigurationSection(getName())) {
             ConfigurationSection section = config.getConfigurationSection(getName());
             errors.addAll(blocks.load(plugin, section, isPremiumLoading));
-            errors.addAll(cancelEventIfNotValid.load(plugin, section, isPremiumLoading));
-            errors.addAll(messageIfNotValid.load(plugin, section, isPremiumLoading));
+            if(!disableCancelEventIfNotValid) errors.addAll(cancelEventIfNotValid.load(plugin, section, isPremiumLoading));
+            if(!disableMessageIfNotValid) errors.addAll(messageIfNotValid.load(plugin, section, isPremiumLoading));
         }
 
         return errors;
     }
 
     public boolean isValid(@NotNull Block block, Optional<Player> playerOpt, Event event, StringPlaceholder sp) {
-       return  isValid(block, playerOpt, event, sp, null, null);
+       return isValid(block, playerOpt, event, sp, null, Optional.empty());
     }
 
-    public boolean isValid(@NotNull Block block, Optional<Player> playerOpt, Event event, StringPlaceholder sp, @Nullable Material material, @Nullable Optional<String> statesStrOpt) {
+    public boolean isValid(@NotNull Block block, Optional<Player> playerOpt, Event event, StringPlaceholder sp, @Nullable Material material, @NotNull Optional<String> statesStrOpt) {
+
+        SsomarDev.testMsg("DetailedBlocks 1", DEBUG);
         if(blocks.getValues().isEmpty() && blocks.getBlacklistedValues().isEmpty()) return true;
 
+        SsomarDev.testMsg("DetailedBlocks 2", DEBUG);
         if(blocks.verifBlock(block, material, statesStrOpt)) {
+            SsomarDev.testMsg("DetailedBlocks 3 OK", DEBUG);
             return true;
         }
         else {
+            SsomarDev.testMsg("DetailedBlocks 3 K0", DEBUG);
             if (event != null && cancelEventIfNotValid.getValue() && event instanceof Cancellable) {
                 ((Cancellable) event).setCancelled(true);
             }
@@ -92,10 +120,11 @@ public class DetailedBlocks extends FeatureWithHisOwnEditor<DetailedBlocks, Deta
     @Override
     public void save(ConfigurationSection config) {
         config.set(getName(), null);
+        if(notSaveIfEqualsToDefaultValue && blocks.getValues().isEmpty() && blocks.getBlacklistedValues().isEmpty()) return;
         ConfigurationSection section = config.createSection(getName());
         blocks.save(section);
-        cancelEventIfNotValid.save(section);
-        messageIfNotValid.save(section);
+        if(!disableCancelEventIfNotValid) cancelEventIfNotValid.save(section);
+        if(!disableMessageIfNotValid) messageIfNotValid.save(section);
     }
 
     @Override
@@ -142,10 +171,13 @@ public class DetailedBlocks extends FeatureWithHisOwnEditor<DetailedBlocks, Deta
 
     @Override
     public DetailedBlocks clone(FeatureParentInterface newParent) {
-        DetailedBlocks dropFeatures = new DetailedBlocks(newParent, getName(), getEditorName());
+        DetailedBlocks dropFeatures = new DetailedBlocks(newParent, getFeatureSettings());
         dropFeatures.setBlocks(blocks.clone(dropFeatures));
         dropFeatures.setCancelEventIfNotValid(cancelEventIfNotValid.clone(dropFeatures));
         dropFeatures.setMessageIfNotValid(messageIfNotValid.clone(dropFeatures));
+        dropFeatures.setDisableMessageIfNotValid(disableMessageIfNotValid);
+        dropFeatures.setDisableCancelEventIfNotValid(disableCancelEventIfNotValid);
+        dropFeatures.setNotSaveIfEqualsToDefaultValue(notSaveIfEqualsToDefaultValue);
         return dropFeatures;
     }
 
@@ -177,6 +209,8 @@ public class DetailedBlocks extends FeatureWithHisOwnEditor<DetailedBlocks, Deta
                 hiders.setBlocks(blocks);
                 hiders.setCancelEventIfNotValid(cancelEventIfNotValid);
                 hiders.setMessageIfNotValid(messageIfNotValid);
+                hiders.disableMessageIfNotValid = disableMessageIfNotValid;
+                hiders.disableCancelEventIfNotValid = disableCancelEventIfNotValid;
                 break;
             }
         }

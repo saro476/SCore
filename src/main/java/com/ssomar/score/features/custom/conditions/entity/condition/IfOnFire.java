@@ -1,22 +1,22 @@
 package com.ssomar.score.features.custom.conditions.entity.condition;
 
 import com.ssomar.score.features.FeatureParentInterface;
+import com.ssomar.score.features.FeatureSettingsSCore;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionFeature;
 import com.ssomar.score.features.custom.conditions.entity.EntityConditionRequest;
 import com.ssomar.score.features.types.BooleanFeature;
-import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 
 public class IfOnFire extends EntityConditionFeature<BooleanFeature, IfOnFire> {
 
     public IfOnFire(FeatureParentInterface parent) {
-        super(parent, "ifOnFire", "If on fire", new String[]{}, Material.ANVIL, false);
+        super(parent,  FeatureSettingsSCore.ifOnFire);
     }
 
     @Override
     public boolean verifCondition(EntityConditionRequest request) {
         Entity entity = request.getEntity();
-        if (hasCondition() && entity.getFireTicks() <= 0 ) {
+        if (getCondition().getValue(request.getSp()) && entity.getFireTicks() <= 0 ) {
             runInvalidCondition(request);
             return false;
         }
@@ -30,12 +30,12 @@ public class IfOnFire extends EntityConditionFeature<BooleanFeature, IfOnFire> {
 
     @Override
     public void subReset() {
-        setCondition(new BooleanFeature(getParent(), "ifOnFire", false, "If on fire", new String[]{}, Material.ANVIL, false, true));
+        setCondition(new BooleanFeature(getParent(),  false, FeatureSettingsSCore.ifOnFire, true));
     }
 
     @Override
     public boolean hasCondition() {
-        return getCondition().getValue();
+        return getCondition().isConfigured();
     }
 
     @Override

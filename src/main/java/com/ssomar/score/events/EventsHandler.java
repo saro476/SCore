@@ -8,8 +8,9 @@ import com.ssomar.score.config.GeneralConfig;
 import com.ssomar.score.damagewithoutknockback.DamageWithoutKnockbackListener;
 import com.ssomar.score.editor.NewEditorInteractionsListener;
 import com.ssomar.score.features.custom.cooldowns.CooldownsHandler;
-import com.ssomar.score.menu.InteractionGUI;
 import com.ssomar.score.nofalldamage.NoFallDamageListener;
+import com.ssomar.score.usedapi.Dependency;
+import com.ssomar.score.usedapi.JobsAPI;
 
 public class EventsHandler {
 
@@ -28,15 +29,15 @@ public class EventsHandler {
     }
 
     public void setupEvents() {
-        if(SCore.hasBentoBox) main.getServer().getPluginManager().registerEvents(new BentoBoxLoadingListener(), main);
-
         main.getServer().getPluginManager().registerEvents(new SecurityOPCommands(), main);
 
         main.getServer().getPluginManager().registerEvents(new NoFallDamageListener(), main);
 
         main.getServer().getPluginManager().registerEvents(new DamageWithoutKnockbackListener(), main);
 
-        main.getServer().getPluginManager().registerEvents(new PlayerReconnexion(), main);
+        main.getServer().getPluginManager().registerEvents(new PlayerJoinListener(), main);
+
+        main.getServer().getPluginManager().registerEvents(new PlayerQuitListener(), main);
 
         /* No EntityToggleGlideEvent & EntityPickupItemEvent in 1.11 -*/
         if (!SCore.is1v11Less()) {
@@ -45,9 +46,7 @@ public class EventsHandler {
             main.getServer().getPluginManager().registerEvents(new PlayerPickup(), main);
         }
 
-        main.getServer().getPluginManager().registerEvents(new InteractionGUI(), main);
-
-        main.getServer().getPluginManager().registerEvents(new CommandsHandler(), main);
+        main.getServer().getPluginManager().registerEvents(CommandsHandler.getInstance(), main);
 
         main.getServer().getPluginManager().registerEvents(new KeepCustomFlyEvent(), main);
 
@@ -58,6 +57,8 @@ public class EventsHandler {
         if(!SCore.is1v12Less()) main.getServer().getPluginManager().registerEvents(new DisableGlideActivationEvent(), main);
 
         main.getServer().getPluginManager().registerEvents(PlaceholderLastDamageDealtEvent.getInstance(), main);
+
+        main.getServer().getPluginManager().registerEvents(new OpenChestEvent(), main);
 
         main.getServer().getPluginManager().registerEvents(new DamageResistanceEvent(), main);
 
@@ -76,6 +77,12 @@ public class EventsHandler {
 
         if(SCore.hasJetsMinions && GeneralConfig.getInstance().isJetMinionsGenerateBreakActivator()) main.getServer().getPluginManager().registerEvents(new FixJetsMinionsBlockBreakEvent(), main);
 
-        //main.getServer().getPluginManager().registerEvents(new TESTEVENT(), main);
+        if(!SCore.is1v13Less() && GeneralConfig.getInstance().isEnableDetectionEntitiesFromSpawner()) main.getServer().getPluginManager().registerEvents(new EntitiesFromSpawnerListener(), main);
+
+        main.getServer().getPluginManager().registerEvents(CheckIfDamageIsPosssibleListener.getInstance(), main);
+
+        main.getServer().getPluginManager().registerEvents(new TESTEVENT(), main);
+
+        if(Dependency.JOBS.isInstalled())  main.getServer().getPluginManager().registerEvents(new JobsAPI(), main);
     }
 }
